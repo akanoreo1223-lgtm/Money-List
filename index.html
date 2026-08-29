@@ -45,7 +45,8 @@
 
     .form,
     .history,
-    .wishlist {
+    .wishlist,
+    .goal {
       background: white;
       padding: 20px;
       border-radius: 15px;
@@ -147,6 +148,53 @@
       color: #777;
       margin-top: 8px;
     }
+
+    /* 目標貯金 */
+    .goal-summary {
+      background: #f8f8f8;
+      border-radius: 10px;
+      padding: 15px;
+      margin-top: 15px;
+    }
+
+    .goal-row {
+      display: flex;
+      justify-content: space-between;
+      padding: 6px 0;
+    }
+
+    .goal-value {
+      font-weight: bold;
+    }
+
+    .progress-area {
+      margin-top: 15px;
+    }
+
+    .progress-bar {
+      width: 100%;
+      height: 18px;
+      background: #ddd;
+      border-radius: 20px;
+      overflow: hidden;
+    }
+
+    .progress {
+      height: 100%;
+      width: 0%;
+      background: #333;
+      transition: width 0.3s;
+    }
+
+    .goal-message {
+      text-align: center;
+      font-weight: bold;
+      margin-top: 12px;
+    }
+
+    .goal-complete {
+      color: #008000;
+    }
   </style>
 </head>
 
@@ -203,33 +251,21 @@
 
         <div class="summary-row">
           <span>欲しいもの総額</span>
-
-          <span
-            id="wishTotal"
-            class="summary-value"
-          >
+          <span id="wishTotal" class="summary-value">
             ¥0
           </span>
         </div>
 
         <div class="summary-row">
           <span>現在の残高</span>
-
-          <span
-            id="wishBalance"
-            class="summary-value"
-          >
+          <span id="wishBalance" class="summary-value">
             ¥0
           </span>
         </div>
 
         <div class="summary-row">
           <span>残高との差額</span>
-
-          <span
-            id="difference"
-            class="summary-value"
-          >
+          <span id="difference" class="summary-value">
             ¥0
           </span>
         </div>
@@ -262,6 +298,68 @@
 
     </div>
 
+
+    <!-- 目標貯金 -->
+    <div class="goal">
+
+      <h2>🎯 目標貯金</h2>
+
+      <div class="goal-summary">
+
+        <div class="goal-row">
+          <span>目標金額</span>
+          <span id="goalAmount" class="goal-value">
+            未設定
+          </span>
+        </div>
+
+        <div class="goal-row">
+          <span>現在の残高</span>
+          <span id="goalBalance" class="goal-value">
+            ¥0
+          </span>
+        </div>
+
+        <div class="goal-row">
+          <span>達成率</span>
+          <span id="goalPercent" class="goal-value">
+            0%
+          </span>
+        </div>
+
+        <div class="progress-area">
+
+          <div class="progress-bar">
+            <div
+              id="progress"
+              class="progress"
+            ></div>
+          </div>
+
+        </div>
+
+        <div
+          id="goalMessage"
+          class="goal-message"
+        >
+          目標金額を設定してください。
+        </div>
+
+      </div>
+
+      <input
+        type="number"
+        id="goalInput"
+        placeholder="目標金額"
+        min="1"
+      >
+
+      <button onclick="setGoal()">
+        目標金額を設定
+      </button>
+
+    </div>
+
   </div>
 
 
@@ -275,7 +373,6 @@
       JSON.parse(localStorage.getItem("okodukaiRecords")) || [];
 
 
-    // お金を追加
     function addMoney() {
 
       const type =
@@ -287,12 +384,14 @@
       const amount =
         Number(document.getElementById("amount").value);
 
+
       if (name === "" || amount <= 0) {
 
         alert("内容と金額を入力してください。");
         return;
 
       }
+
 
       const record = {
 
@@ -303,10 +402,12 @@
 
       };
 
+
       records.push(record);
 
       saveData();
       display();
+
 
       document.getElementById("name").value = "";
       document.getElementById("amount").value = "";
@@ -314,7 +415,6 @@
     }
 
 
-    // データを保存
     function saveData() {
 
       localStorage.setItem(
@@ -325,10 +425,10 @@
     }
 
 
-    // 残高を計算
     function calculateBalance() {
 
       let balance = 0;
+
 
       records.forEach(record => {
 
@@ -344,16 +444,17 @@
 
       });
 
+
       return balance;
 
     }
 
 
-    // 履歴と残高を表示
     function display() {
 
       const balance =
         calculateBalance();
+
 
       document.getElementById("balance").textContent =
         "¥" + balance.toLocaleString();
@@ -368,8 +469,8 @@
         history.innerHTML =
           '<p class="empty">まだ記録がありません。</p>';
 
-        // 履歴がなくても欲しいもの側を更新
         displayWishes();
+        displayGoal();
 
         return;
 
@@ -433,13 +534,12 @@
       });
 
 
-      // 残高が変わったので欲しいもの側も更新
       displayWishes();
+      displayGoal();
 
     }
 
 
-    // 記録を削除
     function deleteRecord(index) {
 
       if (confirm("この記録を削除しますか？")) {
@@ -463,7 +563,6 @@
       JSON.parse(localStorage.getItem("okodukaiWishes")) || [];
 
 
-    // 欲しいものを追加
     function addWish() {
 
       const name =
@@ -501,7 +600,6 @@
     }
 
 
-    // 欲しいものを保存
     function saveWishes() {
 
       localStorage.setItem(
@@ -512,16 +610,14 @@
     }
 
 
-    // 欲しいものを表示
     function displayWishes() {
 
       const list =
         document.getElementById("wishlist");
 
 
-      /* 欲しいもの総額 */
-
       let total = 0;
+
 
       wishes.forEach(wish => {
 
@@ -534,8 +630,6 @@
         "¥" + total.toLocaleString();
 
 
-      /* 現在の残高 */
-
       const balance =
         calculateBalance();
 
@@ -543,8 +637,6 @@
       document.getElementById("wishBalance").textContent =
         "¥" + balance.toLocaleString();
 
-
-      /* 残高との差額 */
 
       const difference =
         balance - total;
@@ -572,8 +664,6 @@
 
       }
 
-
-      /* 欲しいものがない場合 */
 
       if (wishes.length === 0) {
 
@@ -627,7 +717,6 @@
     }
 
 
-    // 欲しいものを削除
     function deleteWish(index) {
 
       if (confirm("この欲しいものを削除しますか？")) {
@@ -644,11 +733,160 @@
 
 
     /* =========================
+       目標貯金
+       ========================= */
+
+    let goalAmount =
+      localStorage.getItem("okodukaiGoal");
+
+    if (goalAmount !== null) {
+
+      goalAmount = Number(goalAmount);
+
+    }
+
+
+    // 目標金額を設定
+    function setGoal() {
+
+      const input =
+        document.getElementById("goalInput").value;
+
+
+      if (input === "" || Number(input) <= 0) {
+
+        alert("1円以上の目標金額を入力してください。");
+        return;
+
+      }
+
+
+      goalAmount =
+        Number(input);
+
+
+      localStorage.setItem(
+        "okodukaiGoal",
+        goalAmount
+      );
+
+
+      document.getElementById("goalInput").value = "";
+
+
+      displayGoal();
+
+    }
+
+
+    // 目標貯金を表示
+    function displayGoal() {
+
+      const goalDisplay =
+        document.getElementById("goalAmount");
+
+      const balanceDisplay =
+        document.getElementById("goalBalance");
+
+      const percentDisplay =
+        document.getElementById("goalPercent");
+
+      const progress =
+        document.getElementById("progress");
+
+      const message =
+        document.getElementById("goalMessage");
+
+
+      const balance =
+        calculateBalance();
+
+
+      balanceDisplay.textContent =
+        "¥" + balance.toLocaleString();
+
+
+      // 目標未設定
+      if (goalAmount === null) {
+
+        goalDisplay.textContent =
+          "未設定";
+
+        percentDisplay.textContent =
+          "0%";
+
+        progress.style.width =
+          "0%";
+
+        message.textContent =
+          "目標金額を設定してください。";
+
+        message.className =
+          "goal-message";
+
+        return;
+
+      }
+
+
+      goalDisplay.textContent =
+        "¥" + goalAmount.toLocaleString();
+
+
+      // 達成率
+      let percent =
+        (balance / goalAmount) * 100;
+
+
+      // 表示用の達成率
+      const displayPercent =
+        Math.max(0, Math.min(100, percent));
+
+
+      percentDisplay.textContent =
+        displayPercent.toFixed(1) + "%";
+
+
+      progress.style.width =
+        displayPercent + "%";
+
+
+      // 目標達成
+      if (balance >= goalAmount) {
+
+        message.textContent =
+          "🎉 目標達成！";
+
+        message.className =
+          "goal-message goal-complete";
+
+      } else {
+
+        const remaining =
+          goalAmount - balance;
+
+
+        message.textContent =
+          "あと¥" +
+          remaining.toLocaleString() +
+          "貯めれば目標達成！";
+
+        message.className =
+          "goal-message";
+
+      }
+
+    }
+
+
+
+    /* =========================
        最初に表示
        ========================= */
 
     display();
     displayWishes();
+    displayGoal();
 
   </script>
 
