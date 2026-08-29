@@ -43,7 +43,9 @@
       margin-top: 10px;
     }
 
-    .form {
+    .form,
+    .history,
+    .wishlist {
       background: white;
       padding: 20px;
       border-radius: 15px;
@@ -72,19 +74,13 @@
       opacity: 0.8;
     }
 
-    .history {
-      background: white;
-      padding: 20px;
-      border-radius: 15px;
-      box-shadow: 0 2px 8px #ccc;
-    }
-
     .item {
       display: flex;
       justify-content: space-between;
       align-items: center;
       padding: 12px 0;
       border-bottom: 1px solid #eee;
+      gap: 10px;
     }
 
     .income {
@@ -109,6 +105,11 @@
       text-align: center;
       color: #888;
     }
+
+    .wish-price {
+      font-weight: bold;
+      margin-right: 5px;
+    }
   </style>
 </head>
 
@@ -118,11 +119,13 @@
 
     <h1>💰 お小遣い帳</h1>
 
+    <!-- 残高 -->
     <div class="balance">
       <h2>現在の残高</h2>
       <div id="balance">¥0</div>
     </div>
 
+    <!-- 収入・支出 -->
     <div class="form">
 
       <select id="type">
@@ -147,22 +150,58 @@
 
     </div>
 
+    <!-- 履歴 -->
     <div class="history">
       <h2>📋 履歴</h2>
       <div id="history"></div>
     </div>
 
+    <!-- 欲しいものリスト -->
+    <div class="wishlist">
+
+      <h2>🎁 欲しいものリスト</h2>
+
+      <input
+        type="text"
+        id="wishName"
+        placeholder="欲しいもの（例：ゲームソフト）"
+      >
+
+      <input
+        type="number"
+        id="wishPrice"
+        placeholder="値段"
+        min="1"
+      >
+
+      <button onclick="addWish()">欲しいものを追加</button>
+
+      <div id="wishlist"></div>
+
+    </div>
+
   </div>
 
   <script>
-    // 保存されているデータを読み込む
-    let records = JSON.parse(localStorage.getItem("okodukaiRecords")) || [];
+
+    /* =========================
+       お小遣い帳
+       ========================= */
+
+    let records =
+      JSON.parse(localStorage.getItem("okodukaiRecords")) || [];
 
     // お金を追加
     function addMoney() {
-      const type = document.getElementById("type").value;
-      const name = document.getElementById("name").value;
-      const amount = Number(document.getElementById("amount").value);
+
+      const type =
+        document.getElementById("type").value;
+
+      const name =
+        document.getElementById("name").value;
+
+      const amount =
+        Number(document.getElementById("amount").value);
 
       if (name === "" || amount <= 0) {
         alert("内容と金額を入力してください。");
@@ -181,64 +220,78 @@
       saveData();
       display();
 
-      // 入力欄を空にする
       document.getElementById("name").value = "";
       document.getElementById("amount").value = "";
     }
 
     // データを保存
     function saveData() {
+
       localStorage.setItem(
         "okodukaiRecords",
         JSON.stringify(records)
       );
+
     }
 
-    // 表示
+    // 履歴と残高を表示
     function display() {
 
       let balance = 0;
 
       records.forEach(record => {
+
         if (record.type === "income") {
           balance += record.amount;
         } else {
           balance -= record.amount;
         }
+
       });
 
       document.getElementById("balance").textContent =
         "¥" + balance.toLocaleString();
 
-      const history = document.getElementById("history");
+      const history =
+        document.getElementById("history");
 
       if (records.length === 0) {
+
         history.innerHTML =
           '<p class="empty">まだ記録がありません。</p>';
+
         return;
       }
 
       history.innerHTML = "";
 
-      // 新しい記録を上に表示
       [...records].reverse().forEach((record, index) => {
 
-        const div = document.createElement("div");
+        const div =
+          document.createElement("div");
+
         div.className = "item";
 
-        const realIndex = records.length - 1 - index;
+        const realIndex =
+          records.length - 1 - index;
 
-        const sign = record.type === "income" ? "+" : "-";
+        const sign =
+          record.type === "income" ? "+" : "-";
+
         const className =
-          record.type === "income" ? "income" : "expense";
+          record.type === "income"
+            ? "income"
+            : "expense";
 
         div.innerHTML = `
+
           <div>
             <small>${record.date}</small><br>
             ${record.name}
           </div>
 
           <div>
+
             <span class="${className}">
               ${sign}¥${record.amount.toLocaleString()}
             </span>
@@ -249,24 +302,157 @@
             >
               削除
             </button>
+
           </div>
+
         `;
 
         history.appendChild(div);
+
       });
+
     }
 
     // 記録を削除
     function deleteRecord(index) {
+
       if (confirm("この記録を削除しますか？")) {
+
         records.splice(index, 1);
+
         saveData();
         display();
+
       }
+
     }
 
-    // 最初に表示
+
+    /* =========================
+       欲しいものリスト
+       ========================= */
+
+    let wishes =
+      JSON.parse(localStorage.getItem("okodukaiWishes")) || [];
+
+    // 欲しいものを追加
+    function addWish() {
+
+      const name =
+        document.getElementById("wishName").value;
+
+      const price =
+        Number(document.getElementById("wishPrice").value);
+
+      if (name === "" || price <= 0) {
+
+        alert("欲しいものと値段を入力してください。");
+        return;
+
+      }
+
+      const wish = {
+
+        name: name,
+        price: price
+
+      };
+
+      wishes.push(wish);
+
+      saveWishes();
+      displayWishes();
+
+      document.getElementById("wishName").value = "";
+      document.getElementById("wishPrice").value = "";
+
+    }
+
+    // 欲しいものを保存
+    function saveWishes() {
+
+      localStorage.setItem(
+        "okodukaiWishes",
+        JSON.stringify(wishes)
+      );
+
+    }
+
+    // 欲しいものを表示
+    function displayWishes() {
+
+      const list =
+        document.getElementById("wishlist");
+
+      if (wishes.length === 0) {
+
+        list.innerHTML =
+          '<p class="empty">まだ欲しいものがありません。</p>';
+
+        return;
+
+      }
+
+      list.innerHTML = "";
+
+      wishes.forEach((wish, index) => {
+
+        const div =
+          document.createElement("div");
+
+        div.className = "item";
+
+        div.innerHTML = `
+
+          <div>
+            🎁 ${wish.name}
+          </div>
+
+          <div>
+
+            <span class="wish-price">
+              ¥${wish.price.toLocaleString()}
+            </span>
+
+            <button
+              class="delete"
+              onclick="deleteWish(${index})"
+            >
+              削除
+            </button>
+
+          </div>
+
+        `;
+
+        list.appendChild(div);
+
+      });
+
+    }
+
+    // 欲しいものを削除
+    function deleteWish(index) {
+
+      if (confirm("この欲しいものを削除しますか？")) {
+
+        wishes.splice(index, 1);
+
+        saveWishes();
+        displayWishes();
+
+      }
+
+    }
+
+
+    /* =========================
+       最初に表示
+       ========================= */
+
     display();
+    displayWishes();
+
   </script>
 
 </body>
