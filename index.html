@@ -110,6 +110,43 @@
       font-weight: bold;
       margin-right: 5px;
     }
+
+    /* 欲しいもの集計 */
+    .wish-summary {
+      background: #f8f8f8;
+      border-radius: 10px;
+      padding: 15px;
+      margin-top: 15px;
+      margin-bottom: 15px;
+    }
+
+    .summary-row {
+      display: flex;
+      justify-content: space-between;
+      padding: 5px 0;
+    }
+
+    .summary-value {
+      font-weight: bold;
+    }
+
+    #difference {
+      font-size: 20px;
+    }
+
+    .positive {
+      color: #008000;
+    }
+
+    .negative {
+      color: #d00000;
+    }
+
+    .difference-note {
+      font-size: 13px;
+      color: #777;
+      margin-top: 8px;
+    }
   </style>
 </head>
 
@@ -161,6 +198,58 @@
 
       <h2>🎁 欲しいものリスト</h2>
 
+      <!-- 集計 -->
+      <div class="wish-summary">
+
+        <div class="summary-row">
+          <span>欲しいもの総額</span>
+          <span
+            id="wishTotal"
+            class="summary-value"
+          >
+            ¥0
+          </span>
+        </div>
+
+        <div class="summary-row">
+          <span>所持金（任意）</span>
+          <span
+            id="currentMoney"
+            class="summary-value"
+          >
+            未設定
+          </span>
+        </div>
+
+        <div class="summary-row">
+          <span>所持金との差額</span>
+          <span
+            id="difference"
+            class="summary-value"
+          >
+            未設定
+          </span>
+        </div>
+
+        <div class="difference-note">
+          ※所持金を入力すると自動で計算されます。
+        </div>
+
+      </div>
+
+      <!-- 任意の所持金 -->
+      <input
+        type="number"
+        id="currentMoneyInput"
+        placeholder="所持金を入力（任意）"
+        min="0"
+      >
+
+      <button onclick="setCurrentMoney()">
+        所持金を設定
+      </button>
+
+      <!-- 欲しいもの追加 -->
       <input
         type="text"
         id="wishName"
@@ -174,7 +263,9 @@
         min="1"
       >
 
-      <button onclick="addWish()">欲しいものを追加</button>
+      <button onclick="addWish()">
+        欲しいものを追加
+      </button>
 
       <div id="wishlist"></div>
 
@@ -352,10 +443,8 @@
       }
 
       const wish = {
-
         name: name,
         price: price
-
       };
 
       wishes.push(wish);
@@ -384,6 +473,20 @@
       const list =
         document.getElementById("wishlist");
 
+      /* 欲しいもの総額を計算 */
+      let total = 0;
+
+      wishes.forEach(wish => {
+        total += wish.price;
+      });
+
+      document.getElementById("wishTotal").textContent =
+        "¥" + total.toLocaleString();
+
+      /* 所持金との差額も更新 */
+      updateDifference(total);
+
+      /* リストが空の場合 */
       if (wishes.length === 0) {
 
         list.innerHTML =
@@ -440,6 +543,102 @@
 
         saveWishes();
         displayWishes();
+
+      }
+
+    }
+
+
+    /* =========================
+       所持金・差額
+       ========================= */
+
+    let currentMoney =
+      localStorage.getItem("okodukaiCurrentMoney");
+
+    if (currentMoney !== null) {
+      currentMoney = Number(currentMoney);
+    }
+
+    // 所持金を設定
+    function setCurrentMoney() {
+
+      const input =
+        document.getElementById("currentMoneyInput").value;
+
+      if (input === "" || Number(input) < 0) {
+
+        alert("0円以上の所持金を入力してください。");
+        return;
+
+      }
+
+      currentMoney = Number(input);
+
+      localStorage.setItem(
+        "okodukaiCurrentMoney",
+        currentMoney
+      );
+
+      document.getElementById(
+        "currentMoneyInput"
+      ).value = "";
+
+      updateDifference();
+
+    }
+
+    // 差額を計算
+    function updateDifference(total) {
+
+      if (total === undefined) {
+
+        total = wishes.reduce(
+          (sum, wish) => sum + wish.price,
+          0
+        );
+
+      }
+
+      const moneyDisplay =
+        document.getElementById("currentMoney");
+
+      const differenceDisplay =
+        document.getElementById("difference");
+
+      if (currentMoney === null) {
+
+        moneyDisplay.textContent = "未設定";
+        differenceDisplay.textContent = "未設定";
+
+        differenceDisplay.className =
+          "summary-value";
+
+        return;
+
+      }
+
+      moneyDisplay.textContent =
+        "¥" + currentMoney.toLocaleString();
+
+      const difference =
+        currentMoney - total;
+
+      if (difference >= 0) {
+
+        differenceDisplay.textContent =
+          "+¥" + difference.toLocaleString();
+
+        differenceDisplay.className =
+          "summary-value positive";
+
+      } else {
+
+        differenceDisplay.textContent =
+          "-¥" + Math.abs(difference).toLocaleString();
+
+        differenceDisplay.className =
+          "summary-value negative";
 
       }
 
