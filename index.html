@@ -112,6 +112,14 @@
       margin-right: 5px;
     }
 
+    /* 買えるもの */
+    .can-buy {
+      color: #008000;
+      font-size: 13px;
+      font-weight: bold;
+      margin-left: 5px;
+    }
+
     /* 欲しいもの集計 */
     .wish-summary {
       background: #f8f8f8;
@@ -616,6 +624,8 @@
         document.getElementById("wishlist");
 
 
+      /* 欲しいもの総額 */
+
       let total = 0;
 
 
@@ -630,6 +640,8 @@
         "¥" + total.toLocaleString();
 
 
+      /* 現在の残高 */
+
       const balance =
         calculateBalance();
 
@@ -637,6 +649,8 @@
       document.getElementById("wishBalance").textContent =
         "¥" + balance.toLocaleString();
 
+
+      /* 残高との差額 */
 
       const difference =
         balance - total;
@@ -665,6 +679,8 @@
       }
 
 
+      /* 欲しいものがない場合 */
+
       if (wishes.length === 0) {
 
         list.innerHTML =
@@ -675,10 +691,43 @@
       }
 
 
+      /*
+       * 買えるものを上に並べる
+       *
+       * 残高 >= 値段
+       * → 買える
+       *
+       * 同じグループ内では、
+       * もともとの登録順を維持
+       */
+
+      const sortedWishes =
+        [...wishes].sort((a, b) => {
+
+          const aCanBuy =
+            balance >= a.price;
+
+          const bCanBuy =
+            balance >= b.price;
+
+
+          if (aCanBuy && !bCanBuy) {
+            return -1;
+          }
+
+          if (!aCanBuy && bCanBuy) {
+            return 1;
+          }
+
+          return 0;
+
+        });
+
+
       list.innerHTML = "";
 
 
-      wishes.forEach((wish, index) => {
+      sortedWishes.forEach(wish => {
 
         const div =
           document.createElement("div");
@@ -686,10 +735,21 @@
         div.className = "item";
 
 
+        const canBuy =
+          balance >= wish.price;
+
+
         div.innerHTML = `
 
           <div>
             🎁 ${wish.name}
+
+            ${
+              canBuy
+                ? '<span class="can-buy">買えます！</span>'
+                : ''
+            }
+
           </div>
 
           <div>
@@ -700,7 +760,7 @@
 
             <button
               class="delete"
-              onclick="deleteWish(${index})"
+              onclick="deleteWishByObject(${wishes.indexOf(wish)})"
             >
               削除
             </button>
@@ -713,6 +773,28 @@
         list.appendChild(div);
 
       });
+
+    }
+
+
+    /*
+     * 並び替え後でも正しい商品を削除する
+     */
+    function deleteWishByObject(index) {
+
+      if (index === -1) {
+        return;
+      }
+
+
+      if (confirm("この欲しいものを削除しますか？")) {
+
+        wishes.splice(index, 1);
+
+        saveWishes();
+        displayWishes();
+
+      }
 
     }
 
@@ -739,6 +821,7 @@
     let goalAmount =
       localStorage.getItem("okodukaiGoal");
 
+
     if (goalAmount !== null) {
 
       goalAmount = Number(goalAmount);
@@ -746,7 +829,6 @@
     }
 
 
-    // 目標金額を設定
     function setGoal() {
 
       const input =
@@ -779,7 +861,6 @@
     }
 
 
-    // 目標貯金を表示
     function displayGoal() {
 
       const goalDisplay =
@@ -806,7 +887,6 @@
         "¥" + balance.toLocaleString();
 
 
-      // 目標未設定
       if (goalAmount === null) {
 
         goalDisplay.textContent =
@@ -833,12 +913,10 @@
         "¥" + goalAmount.toLocaleString();
 
 
-      // 達成率
       let percent =
         (balance / goalAmount) * 100;
 
 
-      // 表示用の達成率
       const displayPercent =
         Math.max(0, Math.min(100, percent));
 
@@ -851,7 +929,6 @@
         displayPercent + "%";
 
 
-      // 目標達成
       if (balance >= goalAmount) {
 
         message.textContent =
