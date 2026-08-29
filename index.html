@@ -120,6 +120,23 @@
       margin-left: 5px;
     }
 
+    /* 商品リンク */
+    .wish-link {
+      display: inline-block;
+      width: auto;
+      padding: 5px 9px;
+      margin: 5px 0 0 0;
+      background: #555;
+      color: white;
+      text-decoration: none;
+      border-radius: 6px;
+      font-size: 13px;
+    }
+
+    .wish-link:hover {
+      opacity: 0.8;
+    }
+
     /* 欲しいもの集計 */
     .wish-summary {
       background: #f8f8f8;
@@ -288,7 +305,7 @@
       <input
         type="text"
         id="wishName"
-        placeholder="欲しいもの（例：ゲームソフト）"
+        placeholder="欲しいもの（例：文房具）"
       >
 
       <input
@@ -296,6 +313,12 @@
         id="wishPrice"
         placeholder="値段"
         min="1"
+      >
+
+      <input
+        type="url"
+        id="wishLink"
+        placeholder="商品リンク（任意）"
       >
 
       <button onclick="addWish()">
@@ -579,6 +602,9 @@
       const price =
         Number(document.getElementById("wishPrice").value);
 
+      const link =
+        document.getElementById("wishLink").value.trim();
+
 
       if (name === "" || price <= 0) {
 
@@ -591,7 +617,8 @@
       const wish = {
 
         name: name,
-        price: price
+        price: price,
+        link: link
 
       };
 
@@ -604,6 +631,7 @@
 
       document.getElementById("wishName").value = "";
       document.getElementById("wishPrice").value = "";
+      document.getElementById("wishLink").value = "";
 
     }
 
@@ -631,7 +659,7 @@
 
       wishes.forEach(wish => {
 
-        total += wish.price;
+        total += Number(wish.price) || 0;
 
       });
 
@@ -692,23 +720,20 @@
 
 
       /*
-       * 買えるものを上に並べる
+       * 買えるものを上にする
        *
        * 残高 >= 値段
-       * → 買える
-       *
-       * 同じグループ内では、
-       * もともとの登録順を維持
+       * → 買えます！
        */
 
       const sortedWishes =
         [...wishes].sort((a, b) => {
 
           const aCanBuy =
-            balance >= a.price;
+            balance >= Number(a.price);
 
           const bCanBuy =
-            balance >= b.price;
+            balance >= Number(b.price);
 
 
           if (aCanBuy && !bCanBuy) {
@@ -736,13 +761,38 @@
 
 
         const canBuy =
-          balance >= wish.price;
+          balance >= Number(wish.price);
+
+
+        /*
+         * 古いデータには link がない場合があるので、
+         * link が存在するときだけ表示
+         */
+
+        const linkHTML =
+          wish.link &&
+          wish.link.startsWith("http://") ||
+          wish.link &&
+          wish.link.startsWith("https://")
+            ? `
+              <br>
+              <a
+                class="wish-link"
+                href="${escapeAttribute(wish.link)}"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                🔗 商品ページ
+              </a>
+            `
+            : "";
 
 
         div.innerHTML = `
 
           <div>
-            🎁 ${wish.name}
+
+            🎁 ${escapeHTML(wish.name)}
 
             ${
               canBuy
@@ -750,12 +800,14 @@
                 : ''
             }
 
+            ${linkHTML}
+
           </div>
 
           <div>
 
             <span class="wish-price">
-              ¥${wish.price.toLocaleString()}
+              ¥${Number(wish.price).toLocaleString()}
             </span>
 
             <button
@@ -778,8 +830,10 @@
 
 
     /*
-     * 並び替え後でも正しい商品を削除する
+     * 欲しいものを削除
+     * 並び替え後でも正しい商品を削除
      */
+
     function deleteWishByObject(index) {
 
       if (index === -1) {
@@ -809,6 +863,37 @@
         displayWishes();
 
       }
+
+    }
+
+
+    /*
+     * HTMLに入れる文字を安全にする
+     */
+
+    function escapeHTML(text) {
+
+      return String(text)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+
+    }
+
+
+    /*
+     * リンクを安全に表示するための処理
+     */
+
+    function escapeAttribute(text) {
+
+      return String(text)
+        .replace(/&/g, "&amp;")
+        .replace(/"/g, "&quot;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;");
 
     }
 
