@@ -1,1056 +1,205 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>お小遣い帳</title>
-
-  <style>
-    body {
-      font-family: sans-serif;
-      background: #f5f5f5;
-      margin: 0;
-      padding: 20px;
-    }
-
-    .container {
-      max-width: 500px;
-      margin: auto;
-    }
-
-    h1 {
-      text-align: center;
-    }
-
-    .balance {
-      background: white;
-      padding: 25px;
-      border-radius: 15px;
-      text-align: center;
-      margin-bottom: 20px;
-      box-shadow: 0 2px 8px #ccc;
-    }
-
-    .balance h2 {
-      margin: 0;
-      color: #555;
-      font-size: 18px;
-    }
-
-    #balance {
-      font-size: 36px;
-      font-weight: bold;
-      margin-top: 10px;
-    }
-
-    .form,
-    .history,
-    .wishlist,
-    .goal {
-      background: white;
-      padding: 20px;
-      border-radius: 15px;
-      margin-bottom: 20px;
-      box-shadow: 0 2px 8px #ccc;
-    }
-
-    input, select, button {
-      width: 100%;
-      box-sizing: border-box;
-      padding: 12px;
-      margin-top: 10px;
-      font-size: 16px;
-      border-radius: 8px;
-      border: 1px solid #ccc;
-    }
-
-    button {
-      background: #333;
-      color: white;
-      border: none;
-      cursor: pointer;
-    }
-
-    button:hover {
-      opacity: 0.8;
-    }
-
-    .item {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: 12px 0;
-      border-bottom: 1px solid #eee;
-      gap: 10px;
-    }
-
-    .income {
-      color: #008000;
-      font-weight: bold;
-    }
-
-    .expense {
-      color: #d00000;
-      font-weight: bold;
-    }
-
-    .delete {
-      width: auto;
-      padding: 5px 10px;
-      margin: 0 0 0 10px;
-      background: #999;
-      font-size: 13px;
-    }
-
-    .empty {
-      text-align: center;
-      color: #888;
-    }
-
-    .wish-price {
-      font-weight: bold;
-      margin-right: 5px;
-    }
-
-    /* 買えるもの */
-    .can-buy {
-      color: #008000;
-      font-size: 13px;
-      font-weight: bold;
-      margin-left: 5px;
-    }
-
-    /* 商品リンク */
-    .wish-link {
-      display: inline-block;
-      width: auto;
-      padding: 5px 9px;
-      margin: 5px 0 0 0;
-      background: #555;
-      color: white;
-      text-decoration: none;
-      border-radius: 6px;
-      font-size: 13px;
-    }
-
-    .wish-link:hover {
-      opacity: 0.8;
-    }
-
-    /* 欲しいもの集計 */
-    .wish-summary {
-      background: #f8f8f8;
-      border-radius: 10px;
-      padding: 15px;
-      margin-top: 15px;
-      margin-bottom: 15px;
-    }
-
-    .summary-row {
-      display: flex;
-      justify-content: space-between;
-      padding: 7px 0;
-    }
-
-    .summary-value {
-      font-weight: bold;
-    }
-
-    #difference {
-      font-size: 20px;
-    }
-
-    .positive {
-      color: #008000;
-    }
-
-    .negative {
-      color: #d00000;
-    }
-
-    .difference-note {
-      font-size: 13px;
-      color: #777;
-      margin-top: 8px;
-    }
-
-    /* 目標貯金 */
-    .goal-summary {
-      background: #f8f8f8;
-      border-radius: 10px;
-      padding: 15px;
-      margin-top: 15px;
-    }
-
-    .goal-row {
-      display: flex;
-      justify-content: space-between;
-      padding: 6px 0;
-    }
-
-    .goal-value {
-      font-weight: bold;
-    }
-
-    .progress-area {
-      margin-top: 15px;
-    }
-
-    .progress-bar {
-      width: 100%;
-      height: 18px;
-      background: #ddd;
-      border-radius: 20px;
-      overflow: hidden;
-    }
-
-    .progress {
-      height: 100%;
-      width: 0%;
-      background: #333;
-      transition: width 0.3s;
-    }
-
-    .goal-message {
-      text-align: center;
-      font-weight: bold;
-      margin-top: 12px;
-    }
-
-    .goal-complete {
-      color: #008000;
-    }
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>お小遣い帳</title>
+<style>
+body{font-family:sans-serif;background:#f5f5f5;margin:0;padding:20px}.container{max-width:500px;margin:auto}
+h1{text-align:center}.card{background:white;padding:20px;border-radius:15px;margin-bottom:20px;box-shadow:0 2px 8px #ccc}
+.balance{text-align:center;padding:25px}.balance h2{margin:0;color:#555;font-size:18px}#balance{font-size:36px;font-weight:bold;margin-top:10px}
+input,select,button{width:100%;box-sizing:border-box;padding:12px;margin-top:10px;font-size:16px;border-radius:8px;border:1px solid #ccc}
+button{background:#333;color:white;border:none;cursor:pointer}button:hover{opacity:.8}
+.item{display:flex;justify-content:space-between;align-items:center;padding:12px 0;border-bottom:1px solid #eee;gap:10px}
+.income{color:#008000;font-weight:bold}.expense{color:#d00000;font-weight:bold}
+.delete,.buy-button,.wish-link{width:auto;padding:6px 10px;margin:0 0 0 5px;font-size:13px}.delete{background:#999}.buy-button{background:#333}
+.wish-link{display:inline-block;background:#555;color:white;text-decoration:none;border-radius:6px}.empty{text-align:center;color:#888}
+.summary,.today-box,.rank-box{background:#f8f8f8;border-radius:10px;padding:15px;margin-top:15px}.row{display:flex;justify-content:space-between;padding:7px 0}.bold{font-weight:bold}
+#difference{font-size:20px}.positive{color:#008000}.negative{color:#d00000}.note{font-size:13px;color:#777;margin-top:8px}
+#todayMessage{text-align:center;font-size:18px;font-weight:bold;line-height:1.6}#todayDate{text-align:center;font-size:13px;color:#888}
+#balanceChart{width:100%;height:250px;display:block}.graph-note{text-align:center;font-size:13px;color:#777}
+#rankLetter{text-align:center;font-size:64px;font-weight:bold;margin:5px}#rankMessage{text-align:center;font-weight:bold}
+.progress-bar{width:100%;height:18px;background:#ddd;border-radius:20px;overflow:hidden;margin-top:15px}.progress{height:100%;width:0;background:#333;transition:width .3s}
+.goal-message{text-align:center;font-weight:bold;margin-top:12px}.goal-complete{color:#008000}
+</style>
 </head>
-
 <body>
-
-  <div class="container">
-
-    <h1>💰 お小遣い帳</h1>
-
-    <!-- 残高 -->
-    <div class="balance">
-      <h2>現在の残高</h2>
-      <div id="balance">¥0</div>
-    </div>
-
-    <!-- 収入・支出 -->
-    <div class="form">
-
-      <select id="type">
-        <option value="income">収入</option>
-        <option value="expense">支出</option>
-      </select>
-
-      <input
-        type="text"
-        id="name"
-        placeholder="内容（例：お小遣い、ゲームなど）"
-      >
-
-      <input
-        type="number"
-        id="amount"
-        placeholder="金額"
-        min="1"
-      >
-
-      <button onclick="addMoney()">追加する</button>
-
-    </div>
-
-    <!-- 履歴 -->
-    <div class="history">
-      <h2>📋 履歴</h2>
-      <div id="history"></div>
-    </div>
-
-    <!-- 欲しいものリスト -->
-    <div class="wishlist">
-
-      <h2>🎁 欲しいものリスト</h2>
-
-      <!-- 欲しいもの集計 -->
-      <div class="wish-summary">
-
-        <div class="summary-row">
-          <span>欲しいもの総額</span>
-          <span id="wishTotal" class="summary-value">
-            ¥0
-          </span>
-        </div>
-
-        <div class="summary-row">
-          <span>現在の残高</span>
-          <span id="wishBalance" class="summary-value">
-            ¥0
-          </span>
-        </div>
-
-        <div class="summary-row">
-          <span>残高との差額</span>
-          <span id="difference" class="summary-value">
-            ¥0
-          </span>
-        </div>
-
-        <div class="difference-note">
-          ※「現在の残高 − 欲しいもの総額」で計算しています。
-        </div>
-
-      </div>
-
-      <!-- 欲しいもの追加 -->
-      <input
-        type="text"
-        id="wishName"
-        placeholder="欲しいもの（例：文房具）"
-      >
-
-      <input
-        type="number"
-        id="wishPrice"
-        placeholder="値段"
-        min="1"
-      >
-
-      <input
-        type="url"
-        id="wishLink"
-        placeholder="商品リンク（任意）"
-      >
-
-      <button onclick="addWish()">
-        欲しいものを追加
-      </button>
-
-      <div id="wishlist"></div>
-
-    </div>
-
-
-    <!-- 目標貯金 -->
-    <div class="goal">
-
-      <h2>🎯 目標貯金</h2>
-
-      <div class="goal-summary">
-
-        <div class="goal-row">
-          <span>目標金額</span>
-          <span id="goalAmount" class="goal-value">
-            未設定
-          </span>
-        </div>
-
-        <div class="goal-row">
-          <span>現在の残高</span>
-          <span id="goalBalance" class="goal-value">
-            ¥0
-          </span>
-        </div>
-
-        <div class="goal-row">
-          <span>達成率</span>
-          <span id="goalPercent" class="goal-value">
-            0%
-          </span>
-        </div>
-
-        <div class="progress-area">
-
-          <div class="progress-bar">
-            <div
-              id="progress"
-              class="progress"
-            ></div>
-          </div>
-
-        </div>
-
-        <div
-          id="goalMessage"
-          class="goal-message"
-        >
-          目標金額を設定してください。
-        </div>
-
-      </div>
-
-      <input
-        type="number"
-        id="goalInput"
-        placeholder="目標金額"
-        min="1"
-      >
-
-      <button onclick="setGoal()">
-        目標金額を設定
-      </button>
-
-    </div>
-
-  </div>
-
-
-  <script>
-
-    /* =========================
-       お小遣い帳
-       ========================= */
-
-    let records =
-      JSON.parse(localStorage.getItem("okodukaiRecords")) || [];
-
-
-    function addMoney() {
-
-      const type =
-        document.getElementById("type").value;
-
-      const name =
-        document.getElementById("name").value;
-
-      const amount =
-        Number(document.getElementById("amount").value);
-
-
-      if (name === "" || amount <= 0) {
-
-        alert("内容と金額を入力してください。");
-        return;
-
-      }
-
-
-      const record = {
-
-        type: type,
-        name: name,
-        amount: amount,
-        date: new Date().toLocaleDateString("ja-JP")
-
-      };
-
-
-      records.push(record);
-
-      saveData();
-      display();
-
-
-      document.getElementById("name").value = "";
-      document.getElementById("amount").value = "";
-
-    }
-
-
-    function saveData() {
-
-      localStorage.setItem(
-        "okodukaiRecords",
-        JSON.stringify(records)
-      );
-
-    }
-
-
-    function calculateBalance() {
-
-      let balance = 0;
-
-
-      records.forEach(record => {
-
-        if (record.type === "income") {
-
-          balance += record.amount;
-
-        } else {
-
-          balance -= record.amount;
-
-        }
-
-      });
-
-
-      return balance;
-
-    }
-
-
-    function display() {
-
-      const balance =
-        calculateBalance();
-
-
-      document.getElementById("balance").textContent =
-        "¥" + balance.toLocaleString();
-
-
-      const history =
-        document.getElementById("history");
-
-
-      if (records.length === 0) {
-
-        history.innerHTML =
-          '<p class="empty">まだ記録がありません。</p>';
-
-        displayWishes();
-        displayGoal();
-
-        return;
-
-      }
-
-
-      history.innerHTML = "";
-
-
-      [...records].reverse().forEach((record, index) => {
-
-        const div =
-          document.createElement("div");
-
-        div.className = "item";
-
-
-        const realIndex =
-          records.length - 1 - index;
-
-
-        const sign =
-          record.type === "income"
-            ? "+"
-            : "-";
-
-
-        const className =
-          record.type === "income"
-            ? "income"
-            : "expense";
-
-
-        div.innerHTML = `
-
-          <div>
-            <small>${record.date}</small><br>
-            ${record.name}
-          </div>
-
-          <div>
-
-            <span class="${className}">
-              ${sign}¥${record.amount.toLocaleString()}
-            </span>
-
-            <button
-              class="delete"
-              onclick="deleteRecord(${realIndex})"
-            >
-              削除
-            </button>
-
-          </div>
-
-        `;
-
-
-        history.appendChild(div);
-
-      });
-
-
-      displayWishes();
-      displayGoal();
-
-    }
-
-
-    function deleteRecord(index) {
-
-      if (confirm("この記録を削除しますか？")) {
-
-        records.splice(index, 1);
-
-        saveData();
-        display();
-
-      }
-
-    }
-
-
-
-    /* =========================
-       欲しいものリスト
-       ========================= */
-
-    let wishes =
-      JSON.parse(localStorage.getItem("okodukaiWishes")) || [];
-
-
-    function addWish() {
-
-      const name =
-        document.getElementById("wishName").value;
-
-      const price =
-        Number(document.getElementById("wishPrice").value);
-
-      const link =
-        document.getElementById("wishLink").value.trim();
-
-
-      if (name === "" || price <= 0) {
-
-        alert("欲しいものと値段を入力してください。");
-        return;
-
-      }
-
-
-      const wish = {
-
-        name: name,
-        price: price,
-        link: link
-
-      };
-
-
-      wishes.push(wish);
-
-      saveWishes();
-      displayWishes();
-
-
-      document.getElementById("wishName").value = "";
-      document.getElementById("wishPrice").value = "";
-      document.getElementById("wishLink").value = "";
-
-    }
-
-
-    function saveWishes() {
-
-      localStorage.setItem(
-        "okodukaiWishes",
-        JSON.stringify(wishes)
-      );
-
-    }
-
-
-    function displayWishes() {
-
-      const list =
-        document.getElementById("wishlist");
-
-
-      /* 欲しいもの総額 */
-
-      let total = 0;
-
-
-      wishes.forEach(wish => {
-
-        total += Number(wish.price) || 0;
-
-      });
-
-
-      document.getElementById("wishTotal").textContent =
-        "¥" + total.toLocaleString();
-
-
-      /* 現在の残高 */
-
-      const balance =
-        calculateBalance();
-
-
-      document.getElementById("wishBalance").textContent =
-        "¥" + balance.toLocaleString();
-
-
-      /* 残高との差額 */
-
-      const difference =
-        balance - total;
-
-
-      const differenceDisplay =
-        document.getElementById("difference");
-
-
-      if (difference >= 0) {
-
-        differenceDisplay.textContent =
-          "+¥" + difference.toLocaleString();
-
-        differenceDisplay.className =
-          "summary-value positive";
-
-      } else {
-
-        differenceDisplay.textContent =
-          "-¥" + Math.abs(difference).toLocaleString();
-
-        differenceDisplay.className =
-          "summary-value negative";
-
-      }
-
-
-      /* 欲しいものがない場合 */
-
-      if (wishes.length === 0) {
-
-        list.innerHTML =
-          '<p class="empty">まだ欲しいものがありません。</p>';
-
-        return;
-
-      }
-
-
-      /*
-       * 買えるものを上にする
-       *
-       * 残高 >= 値段
-       * → 買えます！
-       */
-
-      const sortedWishes =
-        [...wishes].sort((a, b) => {
-
-          const aCanBuy =
-            balance >= Number(a.price);
-
-          const bCanBuy =
-            balance >= Number(b.price);
-
-
-          if (aCanBuy && !bCanBuy) {
-            return -1;
-          }
-
-          if (!aCanBuy && bCanBuy) {
-            return 1;
-          }
-
-          return 0;
-
-        });
-
-
-      list.innerHTML = "";
-
-
-      sortedWishes.forEach(wish => {
-
-        const div =
-          document.createElement("div");
-
-        div.className = "item";
-
-
-        const canBuy =
-          balance >= Number(wish.price);
-
-
-        /*
-         * 古いデータには link がない場合があるので、
-         * link が存在するときだけ表示
-         */
-
-        const linkHTML =
-          wish.link &&
-          wish.link.startsWith("http://") ||
-          wish.link &&
-          wish.link.startsWith("https://")
-            ? `
-              <br>
-              <a
-                class="wish-link"
-                href="${escapeAttribute(wish.link)}"
-                target="_blank"
-                rel="noopener noreferrer"
-              >
-                🔗 商品ページ
-              </a>
-            `
-            : "";
-
-
-        div.innerHTML = `
-
-          <div>
-
-            🎁 ${escapeHTML(wish.name)}
-
-            ${
-              canBuy
-                ? '<span class="can-buy">買えます！</span>'
-                : ''
-            }
-
-            ${linkHTML}
-
-          </div>
-
-          <div>
-
-            <span class="wish-price">
-              ¥${Number(wish.price).toLocaleString()}
-            </span>
-
-            <button
-              class="delete"
-              onclick="deleteWishByObject(${wishes.indexOf(wish)})"
-            >
-              削除
-            </button>
-
-          </div>
-
-        `;
-
-
-        list.appendChild(div);
-
-      });
-
-    }
-
-
-    /*
-     * 欲しいものを削除
-     * 並び替え後でも正しい商品を削除
-     */
-
-    function deleteWishByObject(index) {
-
-      if (index === -1) {
-        return;
-      }
-
-
-      if (confirm("この欲しいものを削除しますか？")) {
-
-        wishes.splice(index, 1);
-
-        saveWishes();
-        displayWishes();
-
-      }
-
-    }
-
-
-    function deleteWish(index) {
-
-      if (confirm("この欲しいものを削除しますか？")) {
-
-        wishes.splice(index, 1);
-
-        saveWishes();
-        displayWishes();
-
-      }
-
-    }
-
-
-    /*
-     * HTMLに入れる文字を安全にする
-     */
-
-    function escapeHTML(text) {
-
-      return String(text)
-        .replace(/&/g, "&amp;")
-        .replace(/</g, "&lt;")
-        .replace(/>/g, "&gt;")
-        .replace(/"/g, "&quot;")
-        .replace(/'/g, "&#039;");
-
-    }
-
-
-    /*
-     * リンクを安全に表示するための処理
-     */
-
-    function escapeAttribute(text) {
-
-      return String(text)
-        .replace(/&/g, "&amp;")
-        .replace(/"/g, "&quot;")
-        .replace(/</g, "&lt;")
-        .replace(/>/g, "&gt;");
-
-    }
-
-
-
-    /* =========================
-       目標貯金
-       ========================= */
-
-    let goalAmount =
-      localStorage.getItem("okodukaiGoal");
-
-
-    if (goalAmount !== null) {
-
-      goalAmount = Number(goalAmount);
-
-    }
-
-
-    function setGoal() {
-
-      const input =
-        document.getElementById("goalInput").value;
-
-
-      if (input === "" || Number(input) <= 0) {
-
-        alert("1円以上の目標金額を入力してください。");
-        return;
-
-      }
-
-
-      goalAmount =
-        Number(input);
-
-
-      localStorage.setItem(
-        "okodukaiGoal",
-        goalAmount
-      );
-
-
-      document.getElementById("goalInput").value = "";
-
-
-      displayGoal();
-
-    }
-
-
-    function displayGoal() {
-
-      const goalDisplay =
-        document.getElementById("goalAmount");
-
-      const balanceDisplay =
-        document.getElementById("goalBalance");
-
-      const percentDisplay =
-        document.getElementById("goalPercent");
-
-      const progress =
-        document.getElementById("progress");
-
-      const message =
-        document.getElementById("goalMessage");
-
-
-      const balance =
-        calculateBalance();
-
-
-      balanceDisplay.textContent =
-        "¥" + balance.toLocaleString();
-
-
-      if (goalAmount === null) {
-
-        goalDisplay.textContent =
-          "未設定";
-
-        percentDisplay.textContent =
-          "0%";
-
-        progress.style.width =
-          "0%";
-
-        message.textContent =
-          "目標金額を設定してください。";
-
-        message.className =
-          "goal-message";
-
-        return;
-
-      }
-
-
-      goalDisplay.textContent =
-        "¥" + goalAmount.toLocaleString();
-
-
-      let percent =
-        (balance / goalAmount) * 100;
-
-
-      const displayPercent =
-        Math.max(0, Math.min(100, percent));
-
-
-      percentDisplay.textContent =
-        displayPercent.toFixed(1) + "%";
-
-
-      progress.style.width =
-        displayPercent + "%";
-
-
-      if (balance >= goalAmount) {
-
-        message.textContent =
-          "🎉 目標達成！";
-
-        message.className =
-          "goal-message goal-complete";
-
-      } else {
-
-        const remaining =
-          goalAmount - balance;
-
-
-        message.textContent =
-          "あと¥" +
-          remaining.toLocaleString() +
-          "貯めれば目標達成！";
-
-        message.className =
-          "goal-message";
-
-      }
-
-    }
-
-
-
-    /* =========================
-       最初に表示
-       ========================= */
-
-    display();
-    displayWishes();
-    displayGoal();
-
-  </script>
-
+<div class="container">
+<h1>💰 お小遣い帳</h1>
+
+<div class="card balance"><h2>現在の残高</h2><div id="balance">¥0</div></div>
+
+<div class="card">
+<select id="type"><option value="income">収入</option><option value="expense">支出</option></select>
+<input id="name" type="text" placeholder="内容（例：お小遣い、ゲームなど）">
+<input id="amount" type="number" placeholder="金額" min="1">
+<button onclick="addMoney()">追加する</button>
+</div>
+
+<div class="card"><h2>📋 履歴</h2><div id="history"></div></div>
+
+<div class="card"><h2>💬 今日の一言</h2><div class="today-box"><p id="todayMessage"></p><div id="todayDate"></div></div></div>
+
+<div class="card"><h2>📈 残高推移</h2><canvas id="balanceChart"></canvas><div class="graph-note">収入・支出の履歴から自動計算しています。</div></div>
+
+<div class="card">
+<h2>🎁 欲しいものリスト</h2>
+<div class="summary">
+<div class="row"><span>欲しいもの総額</span><span id="wishTotal" class="bold">¥0</span></div>
+<div class="row"><span>現在の残高</span><span id="wishBalance" class="bold">¥0</span></div>
+<div class="row"><span>残高との差額</span><span id="difference" class="bold">¥0</span></div>
+<div class="note">※「現在の残高 − 欲しいもの総額」で計算しています。</div>
+</div>
+<input id="wishName" type="text" placeholder="欲しいもの（例：文房具）">
+<input id="wishPrice" type="number" placeholder="値段" min="1">
+<input id="wishLink" type="url" placeholder="商品リンク（任意）">
+<button onclick="addWish()">欲しいものを追加</button>
+<div id="wishlist"></div>
+</div>
+
+<div class="card">
+<h2>🏆 お小遣いランク</h2>
+<div class="rank-box">
+<div id="rankLetter">-</div><div id="rankMessage">まだデータがありません。</div>
+<div class="row"><span>現在の残高</span><span id="rankBalance" class="bold">¥0</span></div>
+<div class="row"><span>累計収入</span><span id="rankIncome" class="bold">¥0</span></div>
+<div class="row"><span>累計支出</span><span id="rankExpense" class="bold">¥0</span></div>
+</div>
+</div>
+
+<div class="card">
+<h2>🎯 目標貯金</h2>
+<div class="summary">
+<div class="row"><span>目標金額</span><span id="goalAmount" class="bold">未設定</span></div>
+<div class="row"><span>現在の残高</span><span id="goalBalance" class="bold">¥0</span></div>
+<div class="row"><span>達成率</span><span id="goalPercent" class="bold">0%</span></div>
+<div class="progress-bar"><div id="progress" class="progress"></div></div>
+<div id="goalMessage" class="goal-message">目標金額を設定してください。</div>
+</div>
+<input id="goalInput" type="number" placeholder="目標金額" min="1">
+<button onclick="setGoal()">目標金額を設定</button>
+</div>
+</div>
+
+<script>
+let records=JSON.parse(localStorage.getItem("okodukaiRecords"))||[];
+let wishes=JSON.parse(localStorage.getItem("okodukaiWishes"))||[];
+let goalAmount=localStorage.getItem("okodukaiGoal");
+if(goalAmount!==null)goalAmount=Number(goalAmount);
+
+const todayMessages=[
+"💬 小さな貯金が大きな目標につながる！","💬 本当に欲しいものか、一度考えてみよう。",
+"💬 計画的に使えば、お金はもっと強い味方になる！","💬 今日も無理なく貯金を続けよう！",
+"💬 欲しいものと必要なものを見分けよう。","💬 1円の積み重ねも立派な貯金！",
+"💬 貯めることも、使うことも計画的に。","💬 目標まであと少し！頑張ろう！",
+"💬 お金を記録するだけでも立派なお金管理！","💬 未来の自分のために、今日のお金を大切に。",
+"💬 無駄遣いを減らして、欲しいものを手に入れよう！","💬 今日の選択が未来の残高を作る！"
+];
+
+function esc(t){return String(t).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#039;")}
+function escAttr(t){return String(t).replace(/&/g,"&amp;").replace(/"/g,"&quot;").replace(/</g,"&lt;").replace(/>/g,"&gt;")}
+function calculateBalance(){let b=0;records.forEach(r=>b+=r.type==="income"?Number(r.amount)||0:-(Number(r.amount)||0));return b}
+function saveData(){localStorage.setItem("okodukaiRecords",JSON.stringify(records))}
+function saveWishes(){localStorage.setItem("okodukaiWishes",JSON.stringify(wishes))}
+
+function addMoney(){
+const type=document.getElementById("type").value,name=document.getElementById("name").value.trim(),amount=Number(document.getElementById("amount").value);
+if(!name||amount<=0){alert("内容と金額を入力してください。");return}
+records.push({type,name,amount,date:new Date().toLocaleDateString("ja-JP")});saveData();display();
+document.getElementById("name").value="";document.getElementById("amount").value="";
+}
+function deleteRecord(i){if(confirm("この記録を削除しますか？")){records.splice(i,1);saveData();display()}}
+
+function display(){
+document.getElementById("balance").textContent="¥"+calculateBalance().toLocaleString();
+const h=document.getElementById("history");
+if(!records.length)h.innerHTML='<p class="empty">まだ記録がありません。</p>';
+else{h.innerHTML="";[...records].reverse().forEach((r,i)=>{
+const real=records.length-1-i,d=document.createElement("div");d.className="item";
+const sign=r.type==="income"?"+":"-",cls=r.type==="income"?"income":"expense";
+d.innerHTML='<div><small>'+esc(r.date)+'</small><br>'+esc(r.name)+'</div><div><span class="'+cls+'">'+sign+"¥"+Number(r.amount).toLocaleString()+'</span><button class="delete" onclick="deleteRecord('+real+')">削除</button></div>';
+h.appendChild(d)})}
+displayTodayMessage();displayWishes();displayRank();displayGoal();drawBalanceChart();
+}
+
+function displayTodayMessage(){
+const d=new Date(),n=Math.floor(new Date(d.getFullYear(),d.getMonth(),d.getDate()).getTime()/86400000);
+document.getElementById("todayMessage").textContent=todayMessages[Math.abs(n)%todayMessages.length];
+document.getElementById("todayDate").textContent=d.toLocaleDateString("ja-JP");
+}
+
+function addWish(){
+const name=document.getElementById("wishName").value.trim(),price=Number(document.getElementById("wishPrice").value),link=document.getElementById("wishLink").value.trim();
+if(!name||price<=0){alert("欲しいものと値段を入力してください。");return}
+wishes.push({name,price,link});saveWishes();displayWishes();
+document.getElementById("wishName").value="";document.getElementById("wishPrice").value="";document.getElementById("wishLink").value="";
+}
+function displayWishes(){
+const list=document.getElementById("wishlist");let total=0;wishes.forEach(w=>total+=Number(w.price)||0);const balance=calculateBalance();
+document.getElementById("wishTotal").textContent="¥"+total.toLocaleString();document.getElementById("wishBalance").textContent="¥"+balance.toLocaleString();
+const diff=balance-total,d=document.getElementById("difference");d.textContent=(diff>=0?"+¥":"-¥")+Math.abs(diff).toLocaleString();d.className="bold "+(diff>=0?"positive":"negative");
+if(!wishes.length){list.innerHTML='<p class="empty">まだ欲しいものがありません。</p>';return}
+const sorted=[...wishes].sort((a,b)=>(balance>=Number(b.price)?0:1)-(balance>=Number(a.price)?0:1));list.innerHTML="";
+sorted.forEach(w=>{
+const index=wishes.indexOf(w),can=balance>=Number(w.price);
+const link=w.link&&(w.link.startsWith("http://")||w.link.startsWith("https://"))?'<br><a class="wish-link" href="'+escAttr(w.link)+'" target="_blank" rel="noopener noreferrer">🔗 商品ページ</a>':"";
+const buy=can?'<button class="buy-button" onclick="buyWish('+index+')">🛒 買った！</button>':"";
+const div=document.createElement("div");div.className="item";
+div.innerHTML='<div>🎁 '+esc(w.name)+(can?'<span style="color:#008000;font-size:13px;font-weight:bold;margin-left:5px">買えます！</span>':"")+link+'</div><div><span class="wish-price">¥'+Number(w.price).toLocaleString()+'</span>'+buy+'<button class="delete" onclick="deleteWish('+index+')">削除</button></div>';
+list.appendChild(div);
+});
+}
+function deleteWish(i){if(confirm("この欲しいものを削除しますか？")){wishes.splice(i,1);saveWishes();displayWishes()}}
+function buyWish(i){
+const w=wishes[i];if(!w)return;const price=Number(w.price)||0;
+if(calculateBalance()<price){alert("残高が足りません。");return}
+if(!confirm("「"+w.name+"」を買ったことにして、¥"+price.toLocaleString()+"を支出に追加しますか？"))return;
+records.push({type:"expense",name:w.name,amount:price,date:new Date().toLocaleDateString("ja-JP")});
+wishes.splice(i,1);saveData();saveWishes();display();
+}
+
+function displayRank(){
+let income=0,expense=0;records.forEach(r=>r.type==="income"?income+=Number(r.amount)||0:expense+=Number(r.amount)||0);const balance=calculateBalance();
+let rank="D",msg="まずはお金の記録を続けてみよう！";
+if(income<=0){if(balance>0){rank="C";msg="貯金できています！"}}
+else{const rate=balance/income;
+if(rate>=.8){rank="S";msg="素晴らしい！かなり計画的に管理できています！"}
+else if(rate>=.6){rank="A";msg="かなり上手にお金を管理できています！"}
+else if(rate>=.4){rank="B";msg="いい感じ！バランスよく管理できています！"}
+else if(rate>=.2){rank="C";msg="まずまず！もう少し貯金を意識してみよう！"}
+else{rank="D";msg="支出を少し見直してみるとよさそう！"}}
+document.getElementById("rankLetter").textContent=rank;document.getElementById("rankMessage").textContent=msg;
+document.getElementById("rankBalance").textContent="¥"+balance.toLocaleString();document.getElementById("rankIncome").textContent="¥"+income.toLocaleString();document.getElementById("rankExpense").textContent="¥"+expense.toLocaleString();
+}
+
+function setGoal(){
+const input=document.getElementById("goalInput").value;if(!input||Number(input)<=0){alert("1円以上の目標金額を入力してください。");return}
+goalAmount=Number(input);localStorage.setItem("okodukaiGoal",goalAmount);document.getElementById("goalInput").value="";displayGoal();
+}
+function displayGoal(){
+const b=calculateBalance();document.getElementById("goalBalance").textContent="¥"+b.toLocaleString();
+if(goalAmount===null){document.getElementById("goalAmount").textContent="未設定";document.getElementById("goalPercent").textContent="0%";document.getElementById("progress").style.width="0%";document.getElementById("goalMessage").textContent="目標金額を設定してください。";return}
+document.getElementById("goalAmount").textContent="¥"+goalAmount.toLocaleString();const p=Math.max(0,Math.min(100,b/goalAmount*100));
+document.getElementById("goalPercent").textContent=p.toFixed(1)+"%";document.getElementById("progress").style.width=p+"%";const m=document.getElementById("goalMessage");
+if(b>=goalAmount){m.textContent="🎉 目標達成！";m.className="goal-message goal-complete"}else{m.textContent="あと¥"+(goalAmount-b).toLocaleString()+"貯めれば目標達成！";m.className="goal-message"}
+}
+
+function drawBalanceChart(){
+const c=document.getElementById("balanceChart"),ctx=c.getContext("2d"),w=c.clientWidth||460,h=250,ratio=devicePixelRatio||1;
+c.width=w*ratio;c.height=h*ratio;ctx.setTransform(ratio,0,0,ratio,0,0);ctx.clearRect(0,0,w,h);
+if(!records.length){ctx.textAlign="center";ctx.textBaseline="middle";ctx.font="16px sans-serif";ctx.fillText("まだ記録がありません。",w/2,h/2);return}
+let b=0,pts=[];records.forEach(r=>{b+=r.type==="income"?Number(r.amount)||0:-(Number(r.amount)||0);pts.push(b)});
+let min=Math.min(...pts,0),max=Math.max(...pts,0);if(min===max){min-=100;max+=100}
+const L=55,R=15,T=20,B=35,gW=w-L-R,gH=h-T-B;ctx.strokeStyle="#ddd";ctx.lineWidth=1;
+for(let i=0;i<=4;i++){const y=T+gH*i/4;ctx.beginPath();ctx.moveTo(L,y);ctx.lineTo(w-R,y);ctx.stroke();const v=max-(max-min)*i/4;ctx.fillStyle="#777";ctx.font="11px sans-serif";ctx.textAlign="right";ctx.textBaseline="middle";ctx.fillText("¥"+Math.round(v).toLocaleString(),L-5,y)}
+ctx.beginPath();pts.forEach((v,i)=>{const x=pts.length===1?L+gW/2:L+gW*i/(pts.length-1),y=T+(max-v)/(max-min)*gH;i?ctx.lineTo(x,y):ctx.moveTo(x,y)});ctx.strokeStyle="#333";ctx.lineWidth=3;ctx.stroke();
+pts.forEach((v,i)=>{const x=pts.length===1?L+gW/2:L+gW*i/(pts.length-1),y=T+(max-v)/(max-min)*gH;ctx.beginPath();ctx.arc(x,y,4,0,Math.PI*2);ctx.fillStyle="#333";ctx.fill()});
+ctx.fillStyle="#777";ctx.font="11px sans-serif";ctx.textBaseline="top";ctx.textAlign="left";ctx.fillText(records[0].date,L,h-25);
+if(records.length>1){ctx.textAlign="right";ctx.fillText(records[records.length-1].date,w-R,h-25)}
+}
+window.addEventListener("resize",drawBalanceChart);
+
+display();
+</script>
 </body>
 </html>
