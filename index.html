@@ -74,25 +74,9 @@ function mr(){return records.filter(r=>{let d=new Date(r.ts||0);return d.getFull
 function addMoney(){let type=typeEl().value,n=nameEl().value.trim(),a=+amountEl().value;if(!n||a<=0)return alert("内容と金額を入力してください。");records.push({type,name:n,amount:a,date:new Date().toLocaleDateString("ja-JP"),ts:Date.now()});save();clearFields();render();check()}
 function typeEl(){return document.getElementById("type")}function nameEl(){return document.getElementById("name")}function amountEl(){return document.getElementById("amount")}
 function showHistory(){let c=document.getElementById("cond").value,a=document.getElementById("qa").value,b=document.getElementById("qb").value,q=document.getElementById("q").value.toLowerCase();document.getElementById("qb").style.display=c=="range"?"block":"none";let rs=records.map((r,i)=>({...r,i})).filter(r=>{let n=+r.amount;if(q&&!r.name.toLowerCase().includes(q))return false;if(c=="eq"&&(a==""||n!=+a))return false;if(c=="gte"&&(a==""||n<+a))return false;if(c=="lte"&&(a==""||n>+a))return false;if(c=="range"&&(a==""||b==""||n<+a||n>+b))return false;return true}).reverse(),h=document.getElementById("history");h.innerHTML=rs.length?rs.map(r=>`<div class="item"><div><small>${esc(r.date)}</small><br>${esc(r.name)}</div><div><span class="${r.type=="income"?"income":"expense"}">${r.type=="income"?"+":"-"}¥${(+r.amount).toLocaleString()}</span><button class="delete" onclick="delRecord(${r.i})">削除</button></div></div>`).join(""):'<p class="empty">該当する履歴がありません。</p>'}
-function delRecord(i){if(confirm("この記録を削除しますか？")){records.splice(i,1);save();render();check()}}function clearSearch(){q.value="";cond.value="all";qa.value="";qb.value="";showHistory()}
+function delRecord(i){if(confirm("この記録を削除しますか？")){records.splice(i,1);save();render();check()}}function clearSearch(){q.value="";cond.value="all";qa.value="";qb.value="";showHistory()} 
 function addWish(){let n=wn.value.trim(),p=+wp.value,l=wl.value.trim();if(!n||p<=0)return alert("欲しいものと値段を入力してください。");wishes.push({name:n,price:p,link:l,bought:false});save();wn.value=wp.value=wl.value="";render();check()}
-function buyWish(i){
-  if(confirm("「"+wishes[i].name+"」を買ったことにしますか？")){
-    const price=moneyValue(wishes[i].price);
-    records.push({
-      type:"expense",
-      name:wishes[i].name,
-      amount:price,
-      date:new Date().toLocaleDateString("ja-JP"),
-      ts:Date.now()
-    });
-    wishes[i].bought=true;
-    wishes[i].boughtDate=new Date().toLocaleDateString("ja-JP");
-    save();
-    render();
-    check();
-  }
-}
+function buyWish(i){if(confirm("「"+wishes[i].name+"」を買ったことにしますか？")){const price=moneyValue(wishes[i].price);records.push({type:"expense",name:wishes[i].name,amount:price,date:new Date().toLocaleDateString("ja-JP"),ts:Date.now()});wishes[i].bought=true;wishes[i].boughtDate=new Date().toLocaleDateString("ja-JP");save();render();check()}}
 function delWish(i){if(confirm("この欲しいものを削除しますか？")){wishes.splice(i,1);save();render();check()}}
 function showWishes(){let b=bal(),t=wishes.reduce((x,w)=>x+moneyValue(w.price),0),d=b-t;wt.textContent="¥"+t.toLocaleString();wb.textContent="¥"+b.toLocaleString();diff.textContent=(d>=0?"+¥":"-¥")+Math.abs(d).toLocaleString();diff.className="bold "+(d>=0?"positive":"negative");let a=[...wishes].sort((x,y)=>(b>=moneyValue(y.price))-(b>=moneyValue(x.price))||(x.bought-y.bought)),el=document.getElementById("wishlist");el.innerHTML=a.length?a.map(w=>{let i=wishes.indexOf(w),price=moneyValue(w.price),can=b>=price;return `<div class="item"><div>🎁 ${esc(w.name)} ${can&&!w.bought?'<span class="can">買えます！</span>':''} ${w.bought?'<span class="bought">購入済み</span>':''}${w.link&&(w.link.startsWith("http://")||w.link.startsWith("https://"))?`<br><a class="link" href="${escA(w.link)}" target="_blank" rel="noopener">🔗 商品ページ</a>`:""}</div><div>¥${price.toLocaleString()} ${!w.bought?`<button class="delete" onclick="buyWish(${i})">買った！</button>`:""}<button class="delete" onclick="delWish(${i})">削除</button></div></div>`}).join(""):'<p class="empty">まだ欲しいものがありません。</p>'}
 function setGoal(){let x=+gi.value;if(!x)return alert("1円以上の目標金額を入力してください。");goal=x;localStorage.setItem(G,goal);gi.value="";render();check()}
@@ -226,33 +210,6 @@ function draw(){
       ? "#777"
       : records[i-1].type === "income"
         ? "#008000"
-        : "#d00000";
-
-    ctx.fill();
-  });
-
-  const last = values.length - 1;
-
-  ctx.fillStyle = "#333";
-  ctx.font = "bold 12px sans-serif";
-  ctx.textAlign = "center";
-
-  ctx.fillText(
-    "¥" + values[last].toLocaleString(),
-    getX(last),
-    getY(values[last]) - 10
-  );
-
-  ctx.font = "11px sans-serif";
-  ctx.fillStyle = "#666";
-
-  values.forEach((value,i)=>{
-    ctx.fillText(
-      i === 0 ? "開始" : i,
-      getX(i),
-      graphHeight - 12
-    );
-  });        ? "#008000"
         : "#d00000";
 
     ctx.fill();
@@ -418,6 +375,7 @@ let day=Math.floor(new Date(now.getFullYear(),now.getMonth(),now.getDate()).getT
       alert("コインが足りません。あと"+(need-coin.balance).toLocaleString()+"コイン必要です。");
       return;
     }
+
     coin.balance-=need;
     tree.spent+=need;
 
