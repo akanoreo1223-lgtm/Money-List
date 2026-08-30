@@ -1,205 +1,58 @@
-<!DOCTYPE html>
-<html lang="ja">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>お小遣い帳</title>
+<!doctype html><html lang="ja"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>お小遣い帳</title>
 <style>
-body{font-family:sans-serif;background:#f5f5f5;margin:0;padding:20px}.container{max-width:500px;margin:auto}
-h1{text-align:center}.card{background:white;padding:20px;border-radius:15px;margin-bottom:20px;box-shadow:0 2px 8px #ccc}
-.balance{text-align:center;padding:25px}.balance h2{margin:0;color:#555;font-size:18px}#balance{font-size:36px;font-weight:bold;margin-top:10px}
-input,select,button{width:100%;box-sizing:border-box;padding:12px;margin-top:10px;font-size:16px;border-radius:8px;border:1px solid #ccc}
-button{background:#333;color:white;border:none;cursor:pointer}button:hover{opacity:.8}
-.item{display:flex;justify-content:space-between;align-items:center;padding:12px 0;border-bottom:1px solid #eee;gap:10px}
-.income{color:#008000;font-weight:bold}.expense{color:#d00000;font-weight:bold}
-.delete,.buy-button,.wish-link{width:auto;padding:6px 10px;margin:0 0 0 5px;font-size:13px}.delete{background:#999}.buy-button{background:#333}
-.wish-link{display:inline-block;background:#555;color:white;text-decoration:none;border-radius:6px}.empty{text-align:center;color:#888}
-.summary,.today-box,.rank-box{background:#f8f8f8;border-radius:10px;padding:15px;margin-top:15px}.row{display:flex;justify-content:space-between;padding:7px 0}.bold{font-weight:bold}
-#difference{font-size:20px}.positive{color:#008000}.negative{color:#d00000}.note{font-size:13px;color:#777;margin-top:8px}
-#todayMessage{text-align:center;font-size:18px;font-weight:bold;line-height:1.6}#todayDate{text-align:center;font-size:13px;color:#888}
-#balanceChart{width:100%;height:250px;display:block}.graph-note{text-align:center;font-size:13px;color:#777}
-#rankLetter{text-align:center;font-size:64px;font-weight:bold;margin:5px}#rankMessage{text-align:center;font-weight:bold}
-.progress-bar{width:100%;height:18px;background:#ddd;border-radius:20px;overflow:hidden;margin-top:15px}.progress{height:100%;width:0;background:#333;transition:width .3s}
-.goal-message{text-align:center;font-weight:bold;margin-top:12px}.goal-complete{color:#008000}
-</style>
-</head>
-<body>
-<div class="container">
-<h1>💰 お小遣い帳</h1>
-
-<div class="card balance"><h2>現在の残高</h2><div id="balance">¥0</div></div>
-
-<div class="card">
-<select id="type"><option value="income">収入</option><option value="expense">支出</option></select>
-<input id="name" type="text" placeholder="内容（例：お小遣い、ゲームなど）">
-<input id="amount" type="number" placeholder="金額" min="1">
-<button onclick="addMoney()">追加する</button>
+body{font-family:sans-serif;background:#f5f5f5;margin:0;padding:20px;color:#222}.container{max-width:500px;margin:auto}h1{text-align:center}
+section,.balance{background:white;padding:20px;border-radius:15px;margin-bottom:20px;box-shadow:0 2px 8px #ccc}.balance{text-align:center}.balance h2{margin:0;color:#555;font-size:18px}#balance{font-size:36px;font-weight:bold;margin-top:10px}
+input,select,button{width:100%;box-sizing:border-box;padding:12px;margin-top:10px;font-size:16px;border-radius:8px;border:1px solid #ccc}button{background:#333;color:white;border:0;cursor:pointer}button:hover{opacity:.8}
+.item{display:flex;justify-content:space-between;align-items:center;padding:12px 0;border-bottom:1px solid #eee;gap:10px}.income{color:#080;font-weight:bold}.expense{color:#d00000;font-weight:bold}.delete{width:auto;padding:5px 10px;margin:0 0 0 6px;background:#999;font-size:13px}.empty{text-align:center;color:#888}
+.search{background:#f8f8f8;padding:12px;border-radius:10px;margin:10px 0 15px}.row{display:flex;gap:8px}.row>*{flex:1}.summary{background:#f8f8f8;padding:15px;border-radius:10px}.sr{display:flex;justify-content:space-between;padding:7px 0}.bold{font-weight:bold}.positive{color:#080}.negative{color:#d00000}.note{font-size:13px;color:#777}
+.can{color:#080;font-size:13px;font-weight:bold}.bought{color:#777;font-size:13px}.link{display:inline-block;width:auto;padding:5px 9px;background:#555;color:white;text-decoration:none;border-radius:6px;font-size:13px;margin-top:5px}
+#quote{text-align:center;font-weight:bold;font-size:18px;line-height:1.6}.chart canvas{width:100%;height:240px;display:block}.rank{text-align:center}.ranknum{font-size:50px;font-weight:bold}.progressbar{height:18px;background:#ddd;border-radius:20px;overflow:hidden}.progress{height:100%;background:#333;width:0;transition:.3s}.goalmsg{text-align:center;font-weight:bold;margin-top:12px}.done{color:#080}.achlist{display:none}.achlist.open{display:block}.ach{padding:11px;background:#f5f5f5;border-radius:10px;margin:7px 0}.ach.done{background:#eef8ee}.achhead{display:flex;justify-content:space-between;font-weight:bold;margin-bottom:10px}
+</style></head><body><div class="container"><h1>💰 お小遣い帳</h1>
+<div class="balance"><h2>現在の残高</h2><div id="balance">¥0</div></div>
+<section><select id="type"><option value="income">収入</option><option value="expense">支出</option></select><input id="name" placeholder="内容（例：お小遣い、ゲームなど）"><input id="amount" type="number" min="1" placeholder="金額"><button onclick="addMoney()">追加する</button></section>
+<section><h2>📋 履歴</h2><div class="search"><b>🔍 履歴を検索</b><input id="q" placeholder="内容で検索" oninput="showHistory()"><div class="row"><select id="cond" onchange="showHistory()"><option value="all">金額指定なし</option><option value="eq">同じ</option><option value="gte">以上</option><option value="lte">以下</option><option value="range">範囲</option></select><input id="qa" type="number" min="0" placeholder="金額" oninput="showHistory()"></div><input id="qb" type="number" min="0" placeholder="～ 金額" oninput="showHistory()" style="display:none"><button onclick="clearSearch()">検索をクリア</button></div><div id="history"></div></section>
+<section><h2>💬 今日の一言</h2><div id="quote"></div></section>
+<section class="chart"><h2>📈 残高グラフ</h2><canvas id="graph"></canvas><div class="note" style="text-align:center">履歴を追加・削除すると自動更新されます。</div></section>
+<section><h2>🎁 欲しいものリスト</h2><div class="summary"><div class="sr"><span>欲しいもの総額</span><b id="wt">¥0</b></div><div class="sr"><span>現在の残高</span><b id="wb">¥0</b></div><div class="sr"><span>残高との差額</span><b id="diff">¥0</b></div><div class="note">※現在の残高 − 欲しいもの総額</div></div><input id="wn" placeholder="欲しいもの"><input id="wp" type="number" min="1" placeholder="値段"><input id="wl" type="url" placeholder="商品リンク（任意）"><button onclick="addWish()">欲しいものを追加</button><div id="wishlist"></div></section>
+<section class="rank"><h2>🏆 お小遣いランク</h2><div id="rank" class="ranknum">D</div><div id="rankdetail" class="note"></div></section>
+<section><h2>🎯 目標貯金</h2><div class="summary"><div class="sr"><span>目標金額</span><b id="ga">未設定</b></div><div class="sr"><span>現在の残高</span><b id="gb">¥0</b></div><div class="sr"><span>達成率</span><b id="gp">0%</b></div><div class="progressbar"><div id="prog" class="progress"></div></div><div id="gm" class="goalmsg">目標金額を設定してください。</div></div><input id="gi" type="number" min="1" placeholder="目標金額"><button onclick="setGoal()">目標金額を設定</button></section>
+<section><h2>🏆 月間実績</h2><button onclick="toggleAch()">🏆 今月の実績を見る</button><div id="achlist" class="achlist"><div class="achhead"><span id="am"></span><span id="ac">0 / 30</span></div><div id="achs"></div><button onclick="toggleAch()">閉じる</button></div></section>
 </div>
-
-<div class="card"><h2>📋 履歴</h2><div id="history"></div></div>
-
-<div class="card"><h2>💬 今日の一言</h2><div class="today-box"><p id="todayMessage"></p><div id="todayDate"></div></div></div>
-
-<div class="card"><h2>📈 残高推移</h2><canvas id="balanceChart"></canvas><div class="graph-note">収入・支出の履歴から自動計算しています。</div></div>
-
-<div class="card">
-<h2>🎁 欲しいものリスト</h2>
-<div class="summary">
-<div class="row"><span>欲しいもの総額</span><span id="wishTotal" class="bold">¥0</span></div>
-<div class="row"><span>現在の残高</span><span id="wishBalance" class="bold">¥0</span></div>
-<div class="row"><span>残高との差額</span><span id="difference" class="bold">¥0</span></div>
-<div class="note">※「現在の残高 − 欲しいもの総額」で計算しています。</div>
-</div>
-<input id="wishName" type="text" placeholder="欲しいもの（例：文房具）">
-<input id="wishPrice" type="number" placeholder="値段" min="1">
-<input id="wishLink" type="url" placeholder="商品リンク（任意）">
-<button onclick="addWish()">欲しいものを追加</button>
-<div id="wishlist"></div>
-</div>
-
-<div class="card">
-<h2>🏆 お小遣いランク</h2>
-<div class="rank-box">
-<div id="rankLetter">-</div><div id="rankMessage">まだデータがありません。</div>
-<div class="row"><span>現在の残高</span><span id="rankBalance" class="bold">¥0</span></div>
-<div class="row"><span>累計収入</span><span id="rankIncome" class="bold">¥0</span></div>
-<div class="row"><span>累計支出</span><span id="rankExpense" class="bold">¥0</span></div>
-</div>
-</div>
-
-<div class="card">
-<h2>🎯 目標貯金</h2>
-<div class="summary">
-<div class="row"><span>目標金額</span><span id="goalAmount" class="bold">未設定</span></div>
-<div class="row"><span>現在の残高</span><span id="goalBalance" class="bold">¥0</span></div>
-<div class="row"><span>達成率</span><span id="goalPercent" class="bold">0%</span></div>
-<div class="progress-bar"><div id="progress" class="progress"></div></div>
-<div id="goalMessage" class="goal-message">目標金額を設定してください。</div>
-</div>
-<input id="goalInput" type="number" placeholder="目標金額" min="1">
-<button onclick="setGoal()">目標金額を設定</button>
-</div>
-</div>
-
 <script>
-let records=JSON.parse(localStorage.getItem("okodukaiRecords"))||[];
-let wishes=JSON.parse(localStorage.getItem("okodukaiWishes"))||[];
-let goalAmount=localStorage.getItem("okodukaiGoal");
-if(goalAmount!==null)goalAmount=Number(goalAmount);
-
-const todayMessages=[
-"💬 小さな貯金が大きな目標につながる！","💬 本当に欲しいものか、一度考えてみよう。",
-"💬 計画的に使えば、お金はもっと強い味方になる！","💬 今日も無理なく貯金を続けよう！",
-"💬 欲しいものと必要なものを見分けよう。","💬 1円の積み重ねも立派な貯金！",
-"💬 貯めることも、使うことも計画的に。","💬 目標まであと少し！頑張ろう！",
-"💬 お金を記録するだけでも立派なお金管理！","💬 未来の自分のために、今日のお金を大切に。",
-"💬 無駄遣いを減らして、欲しいものを手に入れよう！","💬 今日の選択が未来の残高を作る！"
+const K="okodukaiRecords",W="okodukaiWishes",G="okodukaiGoal",M="okodukaiMonthlyData",now=new Date(),mk=now.getFullYear()+"-"+String(now.getMonth()+1).padStart(2,"0");
+let records=JSON.parse(localStorage.getItem(K)||"[]"),wishes=JSON.parse(localStorage.getItem(W)||"[]"),goal=localStorage.getItem(G);goal=goal===null?null:Number(goal);
+let months=JSON.parse(localStorage.getItem(M)||"{}");months[mk] ||= {done:{},seen:[],opens:[],max:0,newHigh:false};let md=months[mk];
+const quotes=["小さな貯金が大きな目標につながる！","本当に欲しいものか、一度考えてみよう。","計画的に使えば、お金はもっと強い味方になる！","今日も無理なく貯金を続けよう！","欲しいものと必要なものを見分けよう。","1円の積み重ねも立派な貯金！","貯めることも、使うことも計画的に。","目標まであと少し！頑張ろう！","お金を記録するだけでも立派なお金管理！","未来の自分のために、今日のお金を大切に。","無駄遣いを減らして、欲しいものを手に入れよう！","今日の選択が未来の残高を作る！","欲しいものを買うために、今日も一歩前進！","使ったお金も、貯めたお金も大切な記録！","少しずつでも続けることが大切！","迷ったら、本当に必要か考えてみよう。","貯金は未来の自分へのプレゼント！","目標を忘れず、コツコツ貯めよう！","お金の管理ができる人はかっこいい！✨","今日もお小遣いを上手に使おう！💰"];
+const defs=[
+["🌱","はじめの一歩","今月初めて記録する",()=>mr().length>=1],["📝","記録ビギナー","今月3件記録する",()=>mr().length>=3],["📚","中級記録マン","今月10件記録する",()=>mr().length>=10],["📖","上級記録マン","今月20件記録する",()=>mr().length>=20],["👑","記録マスター","今月30件記録する",()=>mr().length>=30],
+["💰","貯金のススメ","残高が1,000円以上になる",()=>md.max>=1000],["💰","貯金ビギナー","残高が3,000円以上になる",()=>md.max>=3000],["💎","節約上手","残高が5,000円以上になる",()=>md.max>=5000],["💎","お金持ち","残高が10,000円以上になる",()=>md.max>=10000],["🤑","億万長者","残高が20,000円以上になる",()=>md.max>=20000],
+["📈","最高記録更新","過去最高残高を更新する",()=>md.newHigh],["🏦","収入3回","今月3回収入を記録する",()=>mr().filter(r=>r.type=="income").length>=3],["💵","収入5,000円","今月の収入合計が5,000円以上",()=>sum(mr().filter(r=>r.type=="income"))>=5000],["🛍️","初めての支出","今月初めて支出を記録する",()=>mr().some(r=>r.type=="expense")],["🧮","支出5回","今月5回支出を記録する",()=>mr().filter(r=>r.type=="expense").length>=5],
+["🧘","節約モード","1週間で支出合計を1,000円以下にする",()=>weekOK()],["🔥","7日間継続","7日連続でサイトを開く",()=>streak(7)],["🔥","14日間継続","14日連続でサイトを開く",()=>streak(14)],["👂","耳にタコができる","今日の一言を12種類以上見る",()=>md.seen.length>=12],["🏆","Sランク到達","今月Sランクになる",()=>rank()=="S"],["🥇","Aランク以上","今月Aランク以上になる",()=>["S","A"].includes(rank())],
+["🎁","欲しいもの登録","欲しいものを1個登録する",()=>wishes.length>=1],["🎁","欲しいもの3個","欲しいものを3個登録する",()=>wishes.length>=3],["🛒","初購入","「買った！」を1回使う",()=>wishes.some(w=>w.bought)],["🛒","お買い物上手","「買った！」を3回使う",()=>wishes.filter(w=>w.bought).length>=3],["🔗","リンク活用","商品リンク付きの商品を登録する",()=>wishes.some(w=>w.link)],
+["🎯","目標設定","目標貯金を設定する",()=>goal!==null],["🎯","目標50%","目標貯金の達成率50%以上",()=>goal!==null&&bal()/goal>=.5],["🎉","目標達成","目標貯金を達成する",()=>goal!==null&&bal()>=goal],["👑","今月の達人","今月の実績を20個以上達成する",()=>Object.keys(md.done).filter(i=>Number(i)<29).length>=20]
 ];
-
-function esc(t){return String(t).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#039;")}
-function escAttr(t){return String(t).replace(/&/g,"&amp;").replace(/"/g,"&quot;").replace(/</g,"&lt;").replace(/>/g,"&gt;")}
-function calculateBalance(){let b=0;records.forEach(r=>b+=r.type==="income"?Number(r.amount)||0:-(Number(r.amount)||0));return b}
-function saveData(){localStorage.setItem("okodukaiRecords",JSON.stringify(records))}
-function saveWishes(){localStorage.setItem("okodukaiWishes",JSON.stringify(wishes))}
-
-function addMoney(){
-const type=document.getElementById("type").value,name=document.getElementById("name").value.trim(),amount=Number(document.getElementById("amount").value);
-if(!name||amount<=0){alert("内容と金額を入力してください。");return}
-records.push({type,name,amount,date:new Date().toLocaleDateString("ja-JP")});saveData();display();
-document.getElementById("name").value="";document.getElementById("amount").value="";
-}
-function deleteRecord(i){if(confirm("この記録を削除しますか？")){records.splice(i,1);saveData();display()}}
-
-function display(){
-document.getElementById("balance").textContent="¥"+calculateBalance().toLocaleString();
-const h=document.getElementById("history");
-if(!records.length)h.innerHTML='<p class="empty">まだ記録がありません。</p>';
-else{h.innerHTML="";[...records].reverse().forEach((r,i)=>{
-const real=records.length-1-i,d=document.createElement("div");d.className="item";
-const sign=r.type==="income"?"+":"-",cls=r.type==="income"?"income":"expense";
-d.innerHTML='<div><small>'+esc(r.date)+'</small><br>'+esc(r.name)+'</div><div><span class="'+cls+'">'+sign+"¥"+Number(r.amount).toLocaleString()+'</span><button class="delete" onclick="deleteRecord('+real+')">削除</button></div>';
-h.appendChild(d)})}
-displayTodayMessage();displayWishes();displayRank();displayGoal();drawBalanceChart();
-}
-
-function displayTodayMessage(){
-const d=new Date(),n=Math.floor(new Date(d.getFullYear(),d.getMonth(),d.getDate()).getTime()/86400000);
-document.getElementById("todayMessage").textContent=todayMessages[Math.abs(n)%todayMessages.length];
-document.getElementById("todayDate").textContent=d.toLocaleDateString("ja-JP");
-}
-
-function addWish(){
-const name=document.getElementById("wishName").value.trim(),price=Number(document.getElementById("wishPrice").value),link=document.getElementById("wishLink").value.trim();
-if(!name||price<=0){alert("欲しいものと値段を入力してください。");return}
-wishes.push({name,price,link});saveWishes();displayWishes();
-document.getElementById("wishName").value="";document.getElementById("wishPrice").value="";document.getElementById("wishLink").value="";
-}
-function displayWishes(){
-const list=document.getElementById("wishlist");let total=0;wishes.forEach(w=>total+=Number(w.price)||0);const balance=calculateBalance();
-document.getElementById("wishTotal").textContent="¥"+total.toLocaleString();document.getElementById("wishBalance").textContent="¥"+balance.toLocaleString();
-const diff=balance-total,d=document.getElementById("difference");d.textContent=(diff>=0?"+¥":"-¥")+Math.abs(diff).toLocaleString();d.className="bold "+(diff>=0?"positive":"negative");
-if(!wishes.length){list.innerHTML='<p class="empty">まだ欲しいものがありません。</p>';return}
-const sorted=[...wishes].sort((a,b)=>(balance>=Number(b.price)?0:1)-(balance>=Number(a.price)?0:1));list.innerHTML="";
-sorted.forEach(w=>{
-const index=wishes.indexOf(w),can=balance>=Number(w.price);
-const link=w.link&&(w.link.startsWith("http://")||w.link.startsWith("https://"))?'<br><a class="wish-link" href="'+escAttr(w.link)+'" target="_blank" rel="noopener noreferrer">🔗 商品ページ</a>':"";
-const buy=can?'<button class="buy-button" onclick="buyWish('+index+')">🛒 買った！</button>':"";
-const div=document.createElement("div");div.className="item";
-div.innerHTML='<div>🎁 '+esc(w.name)+(can?'<span style="color:#008000;font-size:13px;font-weight:bold;margin-left:5px">買えます！</span>':"")+link+'</div><div><span class="wish-price">¥'+Number(w.price).toLocaleString()+'</span>'+buy+'<button class="delete" onclick="deleteWish('+index+')">削除</button></div>';
-list.appendChild(div);
-});
-}
-function deleteWish(i){if(confirm("この欲しいものを削除しますか？")){wishes.splice(i,1);saveWishes();displayWishes()}}
-function buyWish(i){
-const w=wishes[i];if(!w)return;const price=Number(w.price)||0;
-if(calculateBalance()<price){alert("残高が足りません。");return}
-if(!confirm("「"+w.name+"」を買ったことにして、¥"+price.toLocaleString()+"を支出に追加しますか？"))return;
-records.push({type:"expense",name:w.name,amount:price,date:new Date().toLocaleDateString("ja-JP")});
-wishes.splice(i,1);saveData();saveWishes();display();
-}
-
-function displayRank(){
-let income=0,expense=0;records.forEach(r=>r.type==="income"?income+=Number(r.amount)||0:expense+=Number(r.amount)||0);const balance=calculateBalance();
-let rank="D",msg="まずはお金の記録を続けてみよう！";
-if(income<=0){if(balance>0){rank="C";msg="貯金できています！"}}
-else{const rate=balance/income;
-if(rate>=.8){rank="S";msg="素晴らしい！かなり計画的に管理できています！"}
-else if(rate>=.6){rank="A";msg="かなり上手にお金を管理できています！"}
-else if(rate>=.4){rank="B";msg="いい感じ！バランスよく管理できています！"}
-else if(rate>=.2){rank="C";msg="まずまず！もう少し貯金を意識してみよう！"}
-else{rank="D";msg="支出を少し見直してみるとよさそう！"}}
-document.getElementById("rankLetter").textContent=rank;document.getElementById("rankMessage").textContent=msg;
-document.getElementById("rankBalance").textContent="¥"+balance.toLocaleString();document.getElementById("rankIncome").textContent="¥"+income.toLocaleString();document.getElementById("rankExpense").textContent="¥"+expense.toLocaleString();
-}
-
-function setGoal(){
-const input=document.getElementById("goalInput").value;if(!input||Number(input)<=0){alert("1円以上の目標金額を入力してください。");return}
-goalAmount=Number(input);localStorage.setItem("okodukaiGoal",goalAmount);document.getElementById("goalInput").value="";displayGoal();
-}
-function displayGoal(){
-const b=calculateBalance();document.getElementById("goalBalance").textContent="¥"+b.toLocaleString();
-if(goalAmount===null){document.getElementById("goalAmount").textContent="未設定";document.getElementById("goalPercent").textContent="0%";document.getElementById("progress").style.width="0%";document.getElementById("goalMessage").textContent="目標金額を設定してください。";return}
-document.getElementById("goalAmount").textContent="¥"+goalAmount.toLocaleString();const p=Math.max(0,Math.min(100,b/goalAmount*100));
-document.getElementById("goalPercent").textContent=p.toFixed(1)+"%";document.getElementById("progress").style.width=p+"%";const m=document.getElementById("goalMessage");
-if(b>=goalAmount){m.textContent="🎉 目標達成！";m.className="goal-message goal-complete"}else{m.textContent="あと¥"+(goalAmount-b).toLocaleString()+"貯めれば目標達成！";m.className="goal-message"}
-}
-
-function drawBalanceChart(){
-const c=document.getElementById("balanceChart"),ctx=c.getContext("2d"),w=c.clientWidth||460,h=250,ratio=devicePixelRatio||1;
-c.width=w*ratio;c.height=h*ratio;ctx.setTransform(ratio,0,0,ratio,0,0);ctx.clearRect(0,0,w,h);
-if(!records.length){ctx.textAlign="center";ctx.textBaseline="middle";ctx.font="16px sans-serif";ctx.fillText("まだ記録がありません。",w/2,h/2);return}
-let b=0,pts=[];records.forEach(r=>{b+=r.type==="income"?Number(r.amount)||0:-(Number(r.amount)||0);pts.push(b)});
-let min=Math.min(...pts,0),max=Math.max(...pts,0);if(min===max){min-=100;max+=100}
-const L=55,R=15,T=20,B=35,gW=w-L-R,gH=h-T-B;ctx.strokeStyle="#ddd";ctx.lineWidth=1;
-for(let i=0;i<=4;i++){const y=T+gH*i/4;ctx.beginPath();ctx.moveTo(L,y);ctx.lineTo(w-R,y);ctx.stroke();const v=max-(max-min)*i/4;ctx.fillStyle="#777";ctx.font="11px sans-serif";ctx.textAlign="right";ctx.textBaseline="middle";ctx.fillText("¥"+Math.round(v).toLocaleString(),L-5,y)}
-ctx.beginPath();pts.forEach((v,i)=>{const x=pts.length===1?L+gW/2:L+gW*i/(pts.length-1),y=T+(max-v)/(max-min)*gH;i?ctx.lineTo(x,y):ctx.moveTo(x,y)});ctx.strokeStyle="#333";ctx.lineWidth=3;ctx.stroke();
-pts.forEach((v,i)=>{const x=pts.length===1?L+gW/2:L+gW*i/(pts.length-1),y=T+(max-v)/(max-min)*gH;ctx.beginPath();ctx.arc(x,y,4,0,Math.PI*2);ctx.fillStyle="#333";ctx.fill()});
-ctx.fillStyle="#777";ctx.font="11px sans-serif";ctx.textBaseline="top";ctx.textAlign="left";ctx.fillText(records[0].date,L,h-25);
-if(records.length>1){ctx.textAlign="right";ctx.fillText(records[records.length-1].date,w-R,h-25)}
-}
-window.addEventListener("resize",drawBalanceChart);
-
-display();
-</script>
-</body>
-</html>
+function save(){localStorage.setItem(K,JSON.stringify(records));localStorage.setItem(W,JSON.stringify(wishes));localStorage.setItem(M,JSON.stringify(months))}
+function bal(){return records.reduce((x,r)=>x+(r.type=="income"?+r.amount:-r.amount),0)}function sum(a){return a.reduce((x,r)=>x+Number(r.amount),0)}
+function mr(){return records.filter(r=>{let d=new Date(r.ts||0);return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")==mk})}
+function addMoney(){let type=typeEl().value,n=nameEl().value.trim(),a=+amountEl().value;if(!n||a<=0)return alert("内容と金額を入力してください。");records.push({type,name:n,amount:a,date:new Date().toLocaleDateString("ja-JP"),ts:Date.now()});save();clearFields();render();check()}
+function typeEl(){return document.getElementById("type")}function nameEl(){return document.getElementById("name")}function amountEl(){return document.getElementById("amount")}
+function showHistory(){let c=document.getElementById("cond").value,a=document.getElementById("qa").value,b=document.getElementById("qb").value,q=document.getElementById("q").value.toLowerCase();document.getElementById("qb").style.display=c=="range"?"block":"none";let rs=records.map((r,i)=>({...r,i})).filter(r=>{let n=+r.amount;if(q&&!r.name.toLowerCase().includes(q))return false;if(c=="eq"&&(a==""||n!=+a))return false;if(c=="gte"&&(a==""||n<+a))return false;if(c=="lte"&&(a==""||n>+a))return false;if(c=="range"&&(a==""||b==""||n<+a||n>+b))return false;return true}).reverse(),h=document.getElementById("history");h.innerHTML=rs.length?rs.map(r=>`<div class="item"><div><small>${esc(r.date)}</small><br>${esc(r.name)}</div><div><span class="${r.type=="income"?"income":"expense"}">${r.type=="income"?"+":"-"}¥${(+r.amount).toLocaleString()}</span><button class="delete" onclick="delRecord(${r.i})">削除</button></div></div>`).join(""):'<p class="empty">該当する履歴がありません。</p>'}
+function delRecord(i){if(confirm("この記録を削除しますか？")){records.splice(i,1);save();render();check()}}function clearSearch(){q.value="";cond.value="all";qa.value="";qb.value="";showHistory()} 
+function addWish(){let n=wn.value.trim(),p=+wp.value,l=wl.value.trim();if(!n||p<=0)return alert("欲しいものと値段を入力してください。");wishes.push({name:n,price:p,link:l,bought:false});save();wn.value=wp.value=wl.value="";render();check()}
+function buyWish(i){if(confirm("「"+wishes[i].name+"」を買ったことにしますか？")){wishes[i].bought=true;wishes[i].boughtDate=new Date().toLocaleDateString("ja-JP");save();render();check()}}
+function delWish(i){if(confirm("この欲しいものを削除しますか？")){wishes.splice(i,1);save();render();check()}}
+function showWishes(){let b=bal(),t=sum(wishes),d=b-t;wt.textContent="¥"+t.toLocaleString();wb.textContent="¥"+b.toLocaleString();diff.textContent=(d>=0?"+¥":"-¥")+Math.abs(d).toLocaleString();diff.className="bold "+(d>=0?"positive":"negative");let a=[...wishes].sort((x,y)=>(b>=y.price)-(b>=x.price)||(x.bought-y.bought)),el=document.getElementById("wishlist");el.innerHTML=a.length?a.map(w=>{let i=wishes.indexOf(w),can=b>=w.price;return `<div class="item"><div>🎁 ${esc(w.name)} ${can&&!w.bought?'<span class="can">買えます！</span>':''} ${w.bought?'<span class="bought">購入済み</span>':''}${w.link&&(w.link.startsWith("http://")||w.link.startsWith("https://"))?`<br><a class="link" href="${escA(w.link)}" target="_blank" rel="noopener">🔗 商品ページ</a>`:""}</div><div>¥${(+w.price).toLocaleString()} ${!w.bought?`<button class="delete" onclick="buyWish(${i})">買った！</button>`:""}<button class="delete" onclick="delWish(${i})">削除</button></div></div>`}).join(""):'<p class="empty">まだ欲しいものがありません。</p>'}
+function setGoal(){let x=+gi.value;if(!x)return alert("1円以上の目標金額を入力してください。");goal=x;localStorage.setItem(G,goal);gi.value="";render();check()}
+function showGoal(){gb.textContent="¥"+bal().toLocaleString();if(goal===null){ga.textContent="未設定";gp.textContent="0%";prog.style.width="0%";gm.textContent="目標金額を設定してください。";return}ga.textContent="¥"+goal.toLocaleString();let p=bal()/goal*100,s=Math.max(0,Math.min(100,p));gp.textContent=s.toFixed(1)+"%";prog.style.width=s+"%";gm.textContent=bal()>=goal?"🎉 目標達成！":"あと¥"+(goal-bal()).toLocaleString()+"貯めれば目標達成！"}
+function rank(){let inc=sum(records.filter(r=>r.type=="income")),b=bal();if(!inc)return"D";let x=b/inc;return x>=.8?"S":x>=.6?"A":x>=.4?"B":x>=.2?"C":"D"}function showRank(){rankEl=document.getElementById("rank");rankEl.textContent=rank();rankdetail.textContent="累計収入 ¥"+sum(records.filter(r=>r.type=="income")).toLocaleString()+" / 現在の残高 ¥"+bal().toLocaleString()}
+function draw(){let c=graph,r=c.getBoundingClientRect(),d=devicePixelRatio||1,w=Math.max(300,r.width),h=240;c.width=w*d;c.height=h*d;let x=c.getContext("2d");x.scale(d,d);let v=[0],b=0;records.forEach(r=>{b+=r.type=="income"?+r.amount:-r.amount;v.push(b)});x.clearRect(0,0,w,h);if(v.length<2){x.textAlign="center";x.fillText("履歴を追加するとグラフが表示されます",w/2,h/2);return}let mn=Math.min(...v,0),mx=Math.max(...v,0),rg=mx-mn||1;x.beginPath();v.forEach((n,i)=>{let X=25+(w-35)*i/(v.length-1),Y=20+(h-45)*(mx-n)/rg;i?x.lineTo(X,Y):x.moveTo(X,Y)});x.stroke()}
+function check(){let before=md.max;md.max=Math.max(md.max,bal());if(bal()>before)md.newHigh=true;defs.forEach((a,i)=>{if(!md.done[i]&&a[3]())md.done[i]=true});if(!md.done[29]&&Object.keys(md.done).filter(i=>+i<29).length>=20)md.done[29]=true;save();showAch()}
+function showAch(){am.textContent=now.getFullYear()+"年"+(now.getMonth()+1)+"月";ac.textContent=Object.keys(md.done).length+" / 30";achs.innerHTML=defs.map((a,i)=>`<div class="ach ${md.done[i]?"done":""}">${md.done[i]?"🏅":"🔒"} ${a[0]} <b>${a[1]}</b><div class="note">${a[2]}</div></div>`).join("")}
+function toggleAch(){achlist.classList.toggle("open");showAch()}
+function streak(n){let ds=[...new Set(md.opens)].sort();let best=0,cur=0,prev=null;for(let s of ds){let d=new Date(s);if(prev&&d-prev==86400000)cur++;else cur=1;best=Math.max(best,cur);prev=d}return best>=n}
+function weekOK(){let rs=mr().filter(r=>r.type=="expense");for(let i=0;i<rs.length;i++){let d=new Date(rs[i].ts),s=0;rs.forEach(q=>{if(q.type=="expense"&&q.ts>=d.getTime()&&q.ts<=d.getTime()+6*86400000)s+=+q.amount});if(s<=1000)return true}return false}
+function esc(s){return String(s).replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[m]))}function escA(s){return esc(s)}
+function clearFields(){nameEl().value=amountEl().value=""}
+function render(){balance.textContent="¥"+bal().toLocaleString();showHistory();showWishes();showGoal();showRank();draw();showAch()}
+let day=Math.floor(new Date(now.getFullYear(),now.getMonth(),now.getDate()).getTime()/86400000),qi=day%quotes.length;quote.textContent="💬 "+quotes[qi];if(!md.seen.includes(qi))md.seen.push(qi);let od=now.getFullYear()+"/"+(now.getMonth()+1)+"/"+now.getDate();if(!md.opens.includes(od))md.opens.push(od);save();check();render();window.onresize=draw;
+</script></body></html>
