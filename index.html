@@ -1,3 +1,9 @@
+
+スレッド
+15 GB 中 0% 使用済み
+利用規約 · プライバシー · プログラム ポリシー
+前回のアカウント アクティビティ: 14 分前
+詳細
 <!doctype html><html lang="ja"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>お小遣い帳</title>
 <style>
 body{font-family:sans-serif;background:#f5f5f5;margin:0;padding:20px;color:#222}.container{max-width:500px;margin:auto}h1{text-align:center}
@@ -33,7 +39,7 @@ const defs=[
 ["🎯","目標設定","目標貯金を設定する",()=>goal!==null],["🎯","目標50%","目標貯金の達成率50%以上",()=>goal!==null&&bal()/goal>=.5],["🎉","目標達成","目標貯金を達成する",()=>goal!==null&&bal()>=goal],["👑","今月の達人","今月の実績を20個以上達成する",()=>Object.keys(md.done).filter(i=>Number(i)<29).length>=20]
 ];
 function save(){localStorage.setItem(K,JSON.stringify(records));localStorage.setItem(W,JSON.stringify(wishes));localStorage.setItem(M,JSON.stringify(months))}
-function bal(){return records.reduce((x,r)=>x+(r.type=="income"?+r.amount:-r.amount),0)}function sum(a){return a.reduce((x,r)=>x+Number(r.amount),0)}
+function moneyValue(v){if(typeof v==="number"&&Number.isFinite(v))return v;const n=Number(String(v??"").replace(/,/g,"").trim());return Number.isFinite(n)?n:0}function bal(){return records.reduce((x,r)=>x+(r.type=="income"?moneyValue(r.amount):-moneyValue(r.amount)),0)}function sum(a){return a.reduce((x,r)=>x+moneyValue(r.amount),0)}
 function mr(){return records.filter(r=>{let d=new Date(r.ts||0);return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")==mk})}
 function addMoney(){let type=typeEl().value,n=nameEl().value.trim(),a=+amountEl().value;if(!n||a<=0)return alert("内容と金額を入力してください。");records.push({type,name:n,amount:a,date:new Date().toLocaleDateString("ja-JP"),ts:Date.now()});save();clearFields();render();check()}
 function typeEl(){return document.getElementById("type")}function nameEl(){return document.getElementById("name")}function amountEl(){return document.getElementById("amount")}
@@ -42,7 +48,7 @@ function delRecord(i){if(confirm("この記録を削除しますか？")){record
 function addWish(){let n=wn.value.trim(),p=+wp.value,l=wl.value.trim();if(!n||p<=0)return alert("欲しいものと値段を入力してください。");wishes.push({name:n,price:p,link:l,bought:false});save();wn.value=wp.value=wl.value="";render();check()}
 function buyWish(i){if(confirm("「"+wishes[i].name+"」を買ったことにしますか？")){wishes[i].bought=true;wishes[i].boughtDate=new Date().toLocaleDateString("ja-JP");save();render();check()}}
 function delWish(i){if(confirm("この欲しいものを削除しますか？")){wishes.splice(i,1);save();render();check()}}
-function showWishes(){let b=bal(),t=sum(wishes),d=b-t;wt.textContent="¥"+t.toLocaleString();wb.textContent="¥"+b.toLocaleString();diff.textContent=(d>=0?"+¥":"-¥")+Math.abs(d).toLocaleString();diff.className="bold "+(d>=0?"positive":"negative");let a=[...wishes].sort((x,y)=>(b>=y.price)-(b>=x.price)||(x.bought-y.bought)),el=document.getElementById("wishlist");el.innerHTML=a.length?a.map(w=>{let i=wishes.indexOf(w),can=b>=w.price;return `<div class="item"><div>🎁 ${esc(w.name)} ${can&&!w.bought?'<span class="can">買えます！</span>':''} ${w.bought?'<span class="bought">購入済み</span>':''}${w.link&&(w.link.startsWith("http://")||w.link.startsWith("https://"))?`<br><a class="link" href="${escA(w.link)}" target="_blank" rel="noopener">🔗 商品ページ</a>`:""}</div><div>¥${(+w.price).toLocaleString()} ${!w.bought?`<button class="delete" onclick="buyWish(${i})">買った！</button>`:""}<button class="delete" onclick="delWish(${i})">削除</button></div></div>`}).join(""):'<p class="empty">まだ欲しいものがありません。</p>'}
+function showWishes(){let b=bal(),t=wishes.reduce((x,w)=>x+moneyValue(w.price),0),d=b-t;wt.textContent="¥"+t.toLocaleString();wb.textContent="¥"+b.toLocaleString();diff.textContent=(d>=0?"+¥":"-¥")+Math.abs(d).toLocaleString();diff.className="bold "+(d>=0?"positive":"negative");let a=[...wishes].sort((x,y)=>(b>=moneyValue(y.price))-(b>=moneyValue(x.price))||(x.bought-y.bought)),el=document.getElementById("wishlist");el.innerHTML=a.length?a.map(w=>{let i=wishes.indexOf(w),price=moneyValue(w.price),can=b>=price;return `<div class="item"><div>🎁 ${esc(w.name)} ${can&&!w.bought?'<span class="can">買えます！</span>':''} ${w.bought?'<span class="bought">購入済み</span>':''}${w.link&&(w.link.startsWith("http://")||w.link.startsWith("https://"))?`<br><a class="link" href="${escA(w.link)}" target="_blank" rel="noopener">🔗 商品ページ</a>`:""}</div><div>¥${price.toLocaleString()} ${!w.bought?`<button class="delete" onclick="buyWish(${i})">買った！</button>`:""}<button class="delete" onclick="delWish(${i})">削除</button></div></div>`}).join(""):'<p class="empty">まだ欲しいものがありません。</p>'}
 function setGoal(){let x=+gi.value;if(!x)return alert("1円以上の目標金額を入力してください。");goal=x;localStorage.setItem(G,goal);gi.value="";render();check()}
 function showGoal(){gb.textContent="¥"+bal().toLocaleString();if(goal===null){ga.textContent="未設定";gp.textContent="0%";prog.style.width="0%";gm.textContent="目標金額を設定してください。";return}ga.textContent="¥"+goal.toLocaleString();let p=bal()/goal*100,s=Math.max(0,Math.min(100,p));gp.textContent=s.toFixed(1)+"%";prog.style.width=s+"%";gm.textContent=bal()>=goal?"🎉 目標達成！":"あと¥"+(goal-bal()).toLocaleString()+"貯めれば目標達成！"}
 function rank(){let inc=sum(records.filter(r=>r.type=="income")),b=bal();if(!inc)return"D";let x=b/inc;return x>=.8?"S":x>=.6?"A":x>=.4?"B":x>=.2?"C":"D"}function showRank(){rankEl=document.getElementById("rank");rankEl.textContent=rank();rankdetail.textContent="累計収入 ¥"+sum(records.filter(r=>r.type=="income")).toLocaleString()+" / 現在の残高 ¥"+bal().toLocaleString()}
