@@ -20,16 +20,48 @@ input,select,button{width:100%;box-sizing:border-box;padding:12px;margin-top:10p
 .coin-buttons button{margin-top:0}
 .coin-log{font-size:13px;color:#555;margin-top:10px;text-align:center}
 
+/* ===== お小遣いの軌跡（追加） ===== */
+.trajectory .summary{margin-top:10px}
+.trajectory .sr{gap:10px}
+.trajectory .sr b{text-align:right}
+
 </style></head><body><div class="container"><h1>💰 お小遣い帳</h1>
 <div class="balance"><h2>現在の残高</h2><div id="balance">¥0</div></div>
+
 <section><select id="type"><option value="income">収入</option><option value="expense">支出</option></select><input id="name" placeholder="内容（例：お小遣い、ゲームなど）"><input id="amount" type="number" min="1" placeholder="金額"><button onclick="addMoney()">追加する</button></section>
+
 <section><h2>📋 履歴</h2><div class="search"><b>🔍 履歴を検索</b><input id="q" placeholder="内容で検索" oninput="showHistory()"><div class="row"><select id="cond" onchange="showHistory()"><option value="all">金額指定なし</option><option value="eq">同じ</option><option value="gte">以上</option><option value="lte">以下</option><option value="range">範囲</option></select><input id="qa" type="number" min="0" placeholder="金額" oninput="showHistory()"></div><input id="qb" type="number" min="0" placeholder="～ 金額" oninput="showHistory()" style="display:none"><button onclick="clearSearch()">検索をクリア</button></div><div id="history"></div></section>
+
 <section><h2>💬 今日の一言</h2><div id="quote"></div></section>
+
 <section class="chart"><h2>📈 残高グラフ</h2><div class="chart-wrap"><div class="chart-inner"><canvas id="graph"></canvas></div></div><div class="note chart-note">履歴を追加・削除すると自動更新されます。横にスクロールできます。</div></section>
+
 <section><h2>🎁 欲しいものリスト</h2><div class="summary"><div class="sr"><span>欲しいもの総額</span><b id="wt">¥0</b></div><div class="sr"><span>現在の残高</span><b id="wb">¥0</b></div><div class="sr"><span>残高との差額</span><b id="diff">¥0</b></div><div class="note">※現在の残高 − 欲しいもの総額</div></div><input id="wn" placeholder="欲しいもの"><input id="wp" type="number" min="1" placeholder="値段"><input id="wl" type="url" placeholder="商品リンク（任意）"><button onclick="addWish()">欲しいものを追加</button><div id="wishlist"></div></section>
+
 <section class="rank"><h2>🏆 お小遣いランク</h2><div id="rank" class="ranknum">D</div><div id="rankdetail" class="note"></div></section>
+
 <section><h2>🎯 目標貯金</h2><div class="summary"><div class="sr"><span>目標金額</span><b id="ga">未設定</b></div><div class="sr"><span>現在の残高</span><b id="gb">¥0</b></div><div class="sr"><span>達成率</span><b id="gp">0%</b></div><div class="progressbar"><div id="prog" class="progress"></div></div><div id="gm" class="goalmsg">目標金額を設定してください。</div></div><input id="gi" type="number" min="1" placeholder="目標金額"><button onclick="setGoal()">目標金額を設定</button></section>
-<section><h2>🏆 月間実績</h2><button onclick="toggleAch()">🏆 今月の実績を見る</button><div id="achlist" class="achlist"><div class="achhead"><span id="am"></span><span id="ac">0 / 30</span></div><div id="achs"></div><button onclick="toggleAch()">閉じる</button></div></section>
+
+<section><h2>🏆 月間実績</h2><button onclick="toggleAch()">🏆 今月の実績を見る</button><div id="achlist" class="achlist"><div class="achhead"><span id="am"></span><span id="ac">0 / 32</span></div><div id="achs"></div><button onclick="toggleAch()">閉じる</button></div></section>
+
+<section class="trajectory">
+  <h2>📜 お小遣いの軌跡</h2>
+  <div class="summary">
+    <div class="sr"><span>🏆 自己最高残高</span><b id="trBestBalance">¥0</b></div>
+    <div class="sr"><span>💸 最大の支出</span><b id="trMaxExpense">なし</b></div>
+    <div class="sr"><span>💰 最大の収入</span><b id="trMaxIncome">なし</b></div>
+    <div class="sr"><span>🎯 目標達成記録</span><b id="trGoal">なし</b></div>
+    <div class="sr"><span>📅 最初の記録</span><b id="trFirstRecord">なし</b></div>
+    <div class="sr"><span>📈 最大増加額</span><b id="trMaxIncrease">¥0</b></div>
+    <div class="sr"><span>📉 最大減少額</span><b id="trMaxDecrease">¥0</b></div>
+    <div class="sr"><span>🧮 累計収入</span><b id="trIncomeTotal">¥0</b></div>
+    <div class="sr"><span>🛍️ 累計支出</span><b id="trExpenseTotal">¥0</b></div>
+    <div class="sr"><span>💎 最長貯金期間</span><b id="trSavingDays">0日</b></div>
+    <div class="sr"><span>🪙 累計コイン</span><b id="trCoinTotal">0コイン</b></div>
+    <div class="sr"><span>🌳 木の成長回数</span><b id="trTreeGrowth">0回</b></div>
+  </div>
+  <div class="note" style="margin-top:10px;">※履歴を削除すると、履歴を元にした軌跡は現在の履歴から再計算されます。</div>
+</section>
 
 <section class="coin-tree">
   <h2>🪙 コイン＆🌳 木</h2>
@@ -45,213 +77,518 @@ input,select,button{width:100%;box-sizing:border-box;padding:12px;margin-top:10p
   <div class="tree-progress">
     <div id="treeProgress" class="tree-progress-inner"></div>
   </div>
+
   <div class="coin-note" id="treeProgressText">次の成長まで 500コイン</div>
 
   <div class="coin-buttons">
     <button onclick="useTreeCoins()">🪙 コインを使って木を育てる</button>
     <button id="treeResetButton" onclick="resetTree()" style="display:none;">🔄 最大まで育った木をリセット</button>
   </div>
+
   <div class="coin-log" id="coinLog"></div>
 </section>
 
 </div>
+
 <script>
 const K="okodukaiRecords",W="okodukaiWishes",G="okodukaiGoal",M="okodukaiMonthlyData",now=new Date(),mk=now.getFullYear()+"-"+String(now.getMonth()+1).padStart(2,"0");
-let records=JSON.parse(localStorage.getItem(K)||"[]"),wishes=JSON.parse(localStorage.getItem(W)||"[]"),goal=localStorage.getItem(G);goal=goal===null?null:Number(goal);
-let months=JSON.parse(localStorage.getItem(M)||"{}");months[mk] ||= {done:{},seen:[],opens:[],max:0,newHigh:false};let md=months[mk];
-const quotes=["小さな貯金が大きな目標につながる！","本当に欲しいものか、一度考えてみよう。","計画的に使えば、お金はもっと強い味方になる！","今日も無理なく貯金を続けよう！","欲しいものと必要なものを見分けよう。","1円の積み重ねも立派な貯金！","貯めることも、使うことも計画的に。","目標まであと少し！頑張ろう！","お金を記録するだけでも立派なお金管理！","未来の自分のために、今日のお金を大切に。","無駄遣いを減らして、欲しいものを手に入れよう！","今日の選択が未来の残高を作る！","欲しいものを買うために、今日も一歩前進！","使ったお金も、貯めたお金も大切な記録！","少しずつでも続けることが大切！","迷ったら、本当に必要か考えてみよう。","貯金は未来の自分へのプレゼント！","目標を忘れず、コツコツ貯めよう！","お金の管理ができる人はかっこいい！✨","今日もお小遣いを上手に使おう！💰"];
-const defs=[
-["🌱","はじめの一歩","今月初めて記録する",()=>mr().length>=1],["📝","記録ビギナー","今月3件記録する",()=>mr().length>=3],["📚","中級記録マン","今月10件記録する",()=>mr().length>=10],["📖","上級記録マン","今月20件記録する",()=>mr().length>=20],["👑","記録マスター","今月30件記録する",()=>mr().length>=30],
-["💰","貯金のススメ","残高が1,000円以上になる",()=>md.max>=1000],["💰","貯金ビギナー","残高が3,000円以上になる",()=>md.max>=3000],["💎","節約上手","残高が5,000円以上になる",()=>md.max>=5000],["💎","お金持ち","残高が10,000円以上になる",()=>md.max>=10000],["🤑","億万長者","残高が20,000円以上になる",()=>md.max>=20000],
-["📈","最高記録更新","過去最高残高を更新する",()=>md.newHigh],["🏦","収入3回","今月3回収入を記録する",()=>mr().filter(r=>r.type=="income").length>=3],["💵","収入5,000円","今月の収入合計が5,000円以上",()=>sum(mr().filter(r=>r.type=="income"))>=5000],["🛍️","初めての支出","今月初めて支出を記録する",()=>mr().some(r=>r.type=="expense")],["🧮","支出5回","今月5回支出を記録する",()=>mr().filter(r=>r.type=="expense").length>=5],
-["🧘","節約モード","1週間で支出合計を1,000円以下にする",()=>weekOK()],["🔥","7日間継続","7日連続でサイトを開く",()=>streak(7)],["🔥","14日間継続","14日連続でサイトを開く",()=>streak(14)],["👂","耳にタコができる","今日の一言を12種類以上見る",()=>md.seen.length>=12],["🏆","Sランク到達","今月Sランクになる",()=>rank()=="S"],["🥇","Aランク以上","今月Aランク以上になる",()=>["S","A"].includes(rank())],
-["🎁","欲しいもの登録","欲しいものを1個登録する",()=>wishes.length>=1],["🎁","欲しいもの3個","欲しいものを3個登録する",()=>wishes.length>=3],["🛒","初購入","「買った！」を1回使う",()=>wishes.some(w=>w.bought)],["🛒","お買い物上手","「買った！」を3回使う",()=>wishes.filter(w=>w.bought).length>=3],["🔗","リンク活用","商品リンク付きの商品を登録する",()=>wishes.some(w=>w.link)],
-["🎯","目標設定","目標貯金を設定する",()=>goal!==null],["🎯","目標50%","目標貯金の達成率50%以上",()=>goal!==null&&bal()/goal>=.5],["🎉","目標達成","目標貯金を達成する",()=>goal!==null&&bal()>=goal],["👑","今月の達人","今月の実績を20個以上達成する",()=>Object.keys(md.done).filter(i=>Number(i)<29).length>=20]
+
+let records=JSON.parse(localStorage.getItem(K)||"[]"),wishes=JSON.parse(localStorage.getItem(W)||"[]"),goal=localStorage.getItem(G);
+goal=goal===null?null:Number(goal);
+
+let months=JSON.parse(localStorage.getItem(M)||"{}");
+months[mk] ||= {done:{},seen:[],opens:[],max:0,newHigh:false};
+let md=months[mk];
+
+const quotes=[
+"小さな貯金が大きな目標につながる！",
+"本当に欲しいものか、一度考えてみよう。",
+"計画的に使えば、お金はもっと強い味方になる！",
+"今日も無理なく貯金を続けよう！",
+"欲しいものと必要なものを見分けよう。",
+"1円の積み重ねも立派な貯金！",
+"貯めることも、使うことも計画的に。",
+"目標まであと少し！頑張ろう！",
+"お金を記録するだけでも立派なお金管理！",
+"未来の自分のために、今日のお金を大切に。",
+"無駄遣いを減らして、欲しいものを手に入れよう！",
+"今日の選択が未来の残高を作る！",
+"欲しいものを買うために、今日も一歩前進！",
+"使ったお金も、貯めたお金も大切な記録！",
+"少しずつでも続けることが大切！",
+"迷ったら、本当に必要か考えてみよう。",
+"貯金は未来の自分へのプレゼント！",
+"目標を忘れず、コツコツ貯めよう！",
+"お金の管理ができる人はかっこいい！✨",
+"今日もお小遣いを上手に使おう！💰"
 ];
-function save(){localStorage.setItem(K,JSON.stringify(records));localStorage.setItem(W,JSON.stringify(wishes));localStorage.setItem(M,JSON.stringify(months))}
-function moneyValue(v){if(typeof v==="number"&&Number.isFinite(v))return v;const n=Number(String(v??"").replace(/,/g,"").trim());return Number.isFinite(n)?n:0}function bal(){return records.reduce((x,r)=>x+(r.type=="income"?moneyValue(r.amount):-moneyValue(r.amount)),0)}function sum(a){return a.reduce((x,r)=>x+moneyValue(r.amount),0)}
-function mr(){return records.filter(r=>{let d=new Date(r.ts||0);return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")==mk})}
-function addMoney(){let type=typeEl().value,n=nameEl().value.trim(),a=+amountEl().value;if(!n||a<=0)return alert("内容と金額を入力してください。");records.push({type,name:n,amount:a,date:new Date().toLocaleDateString("ja-JP"),ts:Date.now()});save();clearFields();render();check()}
-function typeEl(){return document.getElementById("type")}function nameEl(){return document.getElementById("name")}function amountEl(){return document.getElementById("amount")}
-function showHistory(){let c=document.getElementById("cond").value,a=document.getElementById("qa").value,b=document.getElementById("qb").value,q=document.getElementById("q").value.toLowerCase();document.getElementById("qb").style.display=c=="range"?"block":"none";let rs=records.map((r,i)=>({...r,i})).filter(r=>{let n=+r.amount;if(q&&!r.name.toLowerCase().includes(q))return false;if(c=="eq"&&(a==""||n!=+a))return false;if(c=="gte"&&(a==""||n<+a))return false;if(c=="lte"&&(a==""||n>+a))return false;if(c=="range"&&(a==""||b==""||n<+a||n>+b))return false;return true}).reverse(),h=document.getElementById("history");h.innerHTML=rs.length?rs.map(r=>`<div class="item"><div><small>${esc(r.date)}</small><br>${esc(r.name)}</div><div><span class="${r.type=="income"?"income":"expense"}">${r.type=="income"?"+":"-"}¥${(+r.amount).toLocaleString()}</span><button class="delete" onclick="delRecord(${r.i})">削除</button></div></div>`).join(""):'<p class="empty">該当する履歴がありません。</p>'}
-function delRecord(i){if(confirm("この記録を削除しますか？")){records.splice(i,1);save();render();check()}}function clearSearch(){q.value="";cond.value="all";qa.value="";qb.value="";showHistory()} 
-function addWish(){let n=wn.value.trim(),p=+wp.value,l=wl.value.trim();if(!n||p<=0)return alert("欲しいものと値段を入力してください。");wishes.push({name:n,price:p,link:l,bought:false});save();wn.value=wp.value=wl.value="";render();check()}
-function buyWish(i){if(confirm("「"+wishes[i].name+"」を買ったことにしますか？")){const price=moneyValue(wishes[i].price);records.push({type:"expense",name:wishes[i].name,amount:price,date:new Date().toLocaleDateString("ja-JP"),ts:Date.now()});wishes[i].bought=true;wishes[i].boughtDate=new Date().toLocaleDateString("ja-JP");save();render();check()}}
-function delWish(i){if(confirm("この欲しいものを削除しますか？")){wishes.splice(i,1);save();render();check()}}
-function showWishes(){let b=bal(),t=wishes.reduce((x,w)=>x+moneyValue(w.price),0),d=b-t;wt.textContent="¥"+t.toLocaleString();wb.textContent="¥"+b.toLocaleString();diff.textContent=(d>=0?"+¥":"-¥")+Math.abs(d).toLocaleString();diff.className="bold "+(d>=0?"positive":"negative");let a=[...wishes].sort((x,y)=>(b>=moneyValue(y.price))-(b>=moneyValue(x.price))||(x.bought-y.bought)),el=document.getElementById("wishlist");el.innerHTML=a.length?a.map(w=>{let i=wishes.indexOf(w),price=moneyValue(w.price),can=b>=price;return `<div class="item"><div>🎁 ${esc(w.name)} ${can&&!w.bought?'<span class="can">買えます！</span>':''} ${w.bought?'<span class="bought">購入済み</span>':''}${w.link&&(w.link.startsWith("http://")||w.link.startsWith("https://"))?`<br><a class="link" href="${escA(w.link)}" target="_blank" rel="noopener">🔗 商品ページ</a>`:""}</div><div>¥${price.toLocaleString()} ${!w.bought?`<button class="delete" onclick="buyWish(${i})">買った！</button>`:""}<button class="delete" onclick="delWish(${i})">削除</button></div></div>`}).join(""):'<p class="empty">まだ欲しいものがありません。</p>'}
-function setGoal(){let x=+gi.value;if(!x)return alert("1円以上の目標金額を入力してください。");goal=x;localStorage.setItem(G,goal);gi.value="";render();check()}
-function showGoal(){gb.textContent="¥"+bal().toLocaleString();if(goal===null){ga.textContent="未設定";gp.textContent="0%";prog.style.width="0%";gm.textContent="目標金額を設定してください。";return}ga.textContent="¥"+goal.toLocaleString();let p=bal()/goal*100,s=Math.max(0,Math.min(100,p));gp.textContent=s.toFixed(1)+"%";prog.style.width=s+"%";gm.textContent=bal()>=goal?"🎉 目標達成！":"あと¥"+(goal-bal()).toLocaleString()+"貯めれば目標達成！"}
-function rank(){let inc=sum(records.filter(r=>r.type=="income")),b=bal();if(!inc)return"D";let x=b/inc;return x>=.8?"S":x>=.6?"A":x>=.4?"B":x>=.2?"C":"D"}function showRank(){rankEl=document.getElementById("rank");rankEl.textContent=rank();rankdetail.textContent="累計収入 ¥"+sum(records.filter(r=>r.type=="income")).toLocaleString()+" / 現在の残高 ¥"+bal().toLocaleString()}
-function draw(){
 
-  const canvas = document.getElementById("graph");
-  if(!canvas) return;
+const defs=[
+["🌱","はじめの一歩","今月初めて記録する",()=>mr().length>=1],
+["📝","記録ビギナー","今月3件記録する",()=>mr().length>=3],
+["📚","中級記録マン","今月10件記録する",()=>mr().length>=10],
+["📖","上級記録マン","今月20件記録する",()=>mr().length>=20],
+["👑","記録マスター","今月30件記録する",()=>mr().length>=30],
 
-  const wrap = canvas.parentElement;
-  const dpr = window.devicePixelRatio || 1;
+["💰","貯金のススメ","残高が1,000円以上になる",()=>md.max>=1000],
+["💰","貯金ビギナー","残高が3,000円以上になる",()=>md.max>=3000],
+["💎","節約上手","残高が5,000円以上になる",()=>md.max>=5000],
+["💎","お金持ち","残高が10,000円以上になる",()=>md.max>=10000],
+["🤑","億万長者","残高が20,000円以上になる",()=>md.max>=20000],
 
-  const graphWidth =
-    Math.max(
-      wrap.clientWidth,
-      Math.max(1, records.length) * 75 + 70
-    );
+["📈","最高記録更新","過去最高残高を更新する",()=>md.newHigh],
+["🏦","収入3回","今月3回収入を記録する",()=>mr().filter(r=>r.type=="income").length>=3],
+["💵","収入5,000円","今月の収入合計が5,000円以上",()=>sum(mr().filter(r=>r.type=="income"))>=5000],
+["🛍️","初めての支出","今月初めて支出を記録する",()=>mr().some(r=>r.type=="expense")],
+["🧮","支出5回","今月5回支出を記録する",()=>mr().filter(r=>r.type=="expense").length>=5],
 
-  const graphHeight = 240;
+["🧘","節約モード","1週間で支出合計を1,000円以下にする",()=>weekOK()],
+["🔥","7日間継続","7日連続でサイトを開く",()=>streak(7)],
+["🔥","14日間継続","14日連続でサイトを開く",()=>streak(14)],
+["👂","耳にタコができる","今日の一言を12種類以上見る",()=>md.seen.length>=12],
+["🏆","Sランク到達","今月Sランクになる",()=>rank()=="S"],
+["🥇","Aランク以上","今月Aランク以上になる",()=>["S","A"].includes(rank())],
 
-  canvas.style.width = graphWidth + "px";
-  canvas.style.height = graphHeight + "px";
-  canvas.width = graphWidth * dpr;
-  canvas.height = graphHeight * dpr;
+["🎁","欲しいもの登録","欲しいものを1個登録する",()=>wishes.length>=1],
+["🎁","欲しいもの3個","欲しいものを3個登録する",()=>wishes.length>=3],
+["🛒","初購入","「買った！」を1回使う",()=>wishes.some(w=>w.bought)],
+["🛒","お買い物上手","「買った！」を3回使う",()=>wishes.filter(w=>w.bought).length>=3],
+["🔗","リンク活用","商品リンク付きの商品を登録する",()=>wishes.some(w=>w.link)],
 
-  const ctx = canvas.getContext("2d");
-  ctx.setTransform(dpr,0,0,dpr,0,0);
-  ctx.clearRect(0,0,graphWidth,graphHeight);
+["🎯","目標設定","目標貯金を設定する",()=>goal!==null],
+["🎯","目標50%","目標貯金の達成率50%以上",()=>goal!==null&&bal()/goal>=.5],
+["🎉","目標達成","目標貯金を達成する",()=>goal!==null&&bal()>=goal],
+["👑","今月の達人","今月の実績を20個以上達成する",()=>Object.keys(md.done).filter(i=>Number(i)<29).length>=20],
 
-  const values = [0];
-  let current = 0;
+["🌳","林業従事者","木を1段階成長させる",()=>treeForAch.spent>=500||treeForAch.growthCount>0],
+["🪙","こんなに!?","月初めからコインが1,500枚増える",()=>coinForAch.totalEarned-(coinForAch.monthStartTotalEarned||0)>=1500]
+];
 
-  records.forEach(record => {
-    const amount = Number(record.amount) || 0;
-    current += record.type === "income" ? amount : -amount;
-    values.push(current);
+function save(){
+  localStorage.setItem(K,JSON.stringify(records));
+  localStorage.setItem(W,JSON.stringify(wishes));
+  localStorage.setItem(M,JSON.stringify(months));
+}
+
+function moneyValue(v){
+  if(typeof v==="number"&&Number.isFinite(v))return v;
+  const n=Number(String(v??"").replace(/,/g,"").trim());
+  return Number.isFinite(n)?n:0;
+}
+
+function bal(){
+  return records.reduce((x,r)=>x+(r.type=="income"?moneyValue(r.amount):-moneyValue(r.amount)),0);
+}
+
+function sum(a){
+  return a.reduce((x,r)=>x+moneyValue(r.amount),0);
+}
+
+function mr(){
+  return records.filter(r=>{
+    let d=new Date(r.ts||0);
+    return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")==mk;
+  });
+}
+
+function addMoney(){
+  let type=typeEl().value,
+      n=nameEl().value.trim(),
+      a=+amountEl().value;
+
+  if(!n||a<=0)return alert("内容と金額を入力してください。");
+
+  records.push({
+    type,
+    name:n,
+    amount:a,
+    date:new Date().toLocaleDateString("ja-JP"),
+    ts:Date.now()
   });
 
-  if(values.length === 1){
-    ctx.fillStyle = "#777";
-    ctx.font = "14px sans-serif";
-    ctx.textAlign = "center";
-    ctx.fillText(
-      "履歴を追加するとグラフが表示されます",
-      graphWidth / 2,
-      graphHeight / 2
-    );
+  save();
+  clearFields();
+  render();
+  check();
+}
+
+function typeEl(){return document.getElementById("type")}
+function nameEl(){return document.getElementById("name")}
+function amountEl(){return document.getElementById("amount")}
+
+function showHistory(){
+  let c=document.getElementById("cond").value,
+      a=document.getElementById("qa").value,
+      b=document.getElementById("qb").value,
+      q=document.getElementById("q").value.toLowerCase();
+
+  document.getElementById("qb").style.display=c=="range"?"block":"none";
+
+  let rs=records.map((r,i)=>({...r,i})).filter(r=>{
+    let n=+r.amount;
+
+    if(q&&!r.name.toLowerCase().includes(q))return false;
+    if(c=="eq"&&(a==""||n!=+a))return false;
+    if(c=="gte"&&(a==""||n<+a))return false;
+    if(c=="lte"&&(a==""||n>+a))return false;
+    if(c=="range"&&(a==""||b==""||n<+a||n>+b))return false;
+
+    return true;
+  }).reverse();
+
+  let h=document.getElementById("history");
+
+  h.innerHTML=rs.length
+    ?rs.map(r=>`<div class="item"><div><small>${esc(r.date)}</small><br>${esc(r.name)}</div><div><span class="${r.type=="income"?"income":"expense"}">${r.type=="income"?"+":"-"}¥${(+r.amount).toLocaleString()}</span><button class="delete" onclick="delRecord(${r.i})">削除</button></div></div>`).join("")
+    :'<p class="empty">該当する履歴がありません。</p>';
+}
+
+function delRecord(i){
+  if(confirm("この記録を削除しますか？")){
+    records.splice(i,1);
+    save();
+    render();
+    check();
+  }
+}
+
+function clearSearch(){
+  q.value="";
+  cond.value="all";
+  qa.value="";
+  qb.value="";
+  showHistory();
+}
+
+function addWish(){
+  let n=wn.value.trim(),
+      p=+wp.value,
+      l=wl.value.trim();
+
+  if(!n||p<=0)return alert("欲しいものと値段を入力してください。");
+
+  wishes.push({
+    name:n,
+    price:p,
+    link:l,
+    bought:false
+  });
+
+  save();
+  wn.value=wp.value=wl.value="";
+  render();
+  check();
+}
+
+function buyWish(i){
+  if(confirm("「"+wishes[i].name+"」を買ったことにしますか？")){
+    wishes[i].bought=true;
+    wishes[i].boughtDate=new Date().toLocaleDateString("ja-JP");
+    save();
+    render();
+    check();
+  }
+}
+
+function delWish(i){
+  if(confirm("この欲しいものを削除しますか？")){
+    wishes.splice(i,1);
+    save();
+    render();
+    check();
+  }
+}
+
+function showWishes(){
+  let b=bal(),
+      t=wishes.reduce((x,w)=>x+moneyValue(w.price),0),
+      d=b-t;
+
+  wt.textContent="¥"+t.toLocaleString();
+  wb.textContent="¥"+b.toLocaleString();
+  diff.textContent=(d>=0?"+¥":"-¥")+Math.abs(d).toLocaleString();
+  diff.className="bold "+(d>=0?"positive":"negative");
+
+  let a=[...wishes].sort(
+    (x,y)=>
+      (b>=moneyValue(y.price))-(b>=moneyValue(x.price))||
+      (x.bought-y.bought)
+  );
+
+  let el=document.getElementById("wishlist");
+
+  el.innerHTML=a.length
+    ?a.map(w=>{
+      let i=wishes.indexOf(w),
+          price=moneyValue(w.price),
+          can=b>=price;
+
+      return `<div class="item"><div>🎁 ${esc(w.name)} ${can&&!w.bought?'<span class="can">買えます！</span>':''} ${w.bought?'<span class="bought">購入済み</span>':''}${w.link&&(w.link.startsWith("http://")||w.link.startsWith("https://"))?`<br><a class="link" href="${escA(w.link)}" target="_blank" rel="noopener">🔗 商品ページ</a>`:""}</div><div>¥${price.toLocaleString()} ${!w.bought?`<button class="delete" onclick="buyWish(${i})">買った！</button>`:""}<button class="delete" onclick="delWish(${i})">削除</button></div></div>`
+    }).join("")
+    :'<p class="empty">まだ欲しいものがありません。</p>';
+}
+
+function setGoal(){
+  let x=+gi.value;
+
+  if(!x)return alert("1円以上の目標金額を入力してください。");
+
+  goal=x;
+  localStorage.setItem(G,goal);
+  gi.value="";
+  render();
+  check();
+}
+
+function showGoal(){
+  gb.textContent="¥"+bal().toLocaleString();
+
+  if(goal===null){
+    ga.textContent="未設定";
+    gp.textContent="0%";
+    prog.style.width="0%";
+    gm.textContent="目標金額を設定してください.";
     return;
   }
 
-  let max = Math.max(...values,0);
-  let min = Math.min(...values,0);
+  ga.textContent="¥"+goal.toLocaleString();
 
-  if(max === min){
-    max += 100;
-    min -= 100;
+  let p=bal()/goal*100,
+      s=Math.max(0,Math.min(100,p));
+
+  gp.textContent=s.toFixed(1)+"%";
+  prog.style.width=s+"%";
+
+  gm.textContent=bal()>=goal
+    ?"🎉 目標達成！"
+    :"あと¥"+(goal-bal()).toLocaleString()+"貯めれば目標達成！";
+}
+
+function rank(){
+  let inc=sum(records.filter(r=>r.type=="income")),
+      b=bal();
+
+  if(!inc)return"D";
+
+  let x=b/inc;
+
+  return x>=.8?"S":x>=.6?"A":x>=.4?"B":x>=.2?"C":"D";
+}
+
+function showRank(){
+  rankEl=document.get
+function draw(){
+  let c=document.getElementById("graph"),
+      ctx=c.getContext("2d"),
+      rs=[...records].sort((a,b)=>a.ts-b.ts);
+
+  let dpr=window.devicePixelRatio||1,
+      w=520,
+      h=240;
+
+  c.width=w*dpr;
+  c.height=h*dpr;
+  c.style.width=w+"px";
+  c.style.height=h+"px";
+  ctx.scale(dpr,dpr);
+  ctx.clearRect(0,0,w,h);
+
+  if(!rs.length){
+    ctx.fillStyle="#888";
+    ctx.textAlign="center";
+    ctx.font="14px sans-serif";
+    ctx.fillText("まだ記録がありません。",w/2,h/2);
+    return;
   }
 
-  const range = max - min;
-  const left = 55;
-  const right = 20;
-  const top = 20;
-  const bottom = 35;
-  const width = graphWidth - left - right;
-  const height = graphHeight - top - bottom;
+  let vals=[],
+      b=0;
 
-  const getX = i =>
-    left + width * i / (values.length - 1);
+  rs.forEach(r=>{
+    b+=r.type=="income"?moneyValue(r.amount):-moneyValue(r.amount);
+    vals.push(b);
+  });
 
-  const getY = value =>
-    top + height * (max - value) / range;
+  let min=Math.min(0,...vals),
+      max=Math.max(0,...vals);
 
-  ctx.font = "11px sans-serif";
-  ctx.textAlign = "right";
-  ctx.lineWidth = 1;
-
-  for(let i=0;i<=5;i++){
-    const value = max - range * i / 5;
-    const y = getY(value);
-
-    ctx.strokeStyle = "#ddd";
-    ctx.beginPath();
-    ctx.moveTo(left,y);
-    ctx.lineTo(graphWidth-right,y);
-    ctx.stroke();
-
-    ctx.fillStyle = "#666";
-    ctx.fillText(
-      "¥" + Math.round(value).toLocaleString(),
-      left - 7,
-      y + 4
-    );
+  if(min===max){
+    min-=100;
+    max+=100;
   }
 
-  if(min <= 0 && max >= 0){
-    const y = getY(0);
+  let pad=35,
+      pw=w-pad*2,
+      ph=h-pad*2;
 
-    ctx.strokeStyle = "#aaa";
-    ctx.setLineDash([5,5]);
-    ctx.beginPath();
-    ctx.moveTo(left,y);
-    ctx.lineTo(graphWidth-right,y);
-    ctx.stroke();
-    ctx.setLineDash([]);
-  }
+  ctx.strokeStyle="#ddd";
+  ctx.lineWidth=1;
 
-  ctx.strokeStyle = "#333";
-  ctx.lineWidth = 3;
+  ctx.beginPath();
+  ctx.moveTo(pad,pad);
+  ctx.lineTo(pad,h-pad);
+  ctx.lineTo(w-pad,h-pad);
+  ctx.stroke();
+
+  ctx.strokeStyle="#333";
+  ctx.lineWidth=2;
   ctx.beginPath();
 
-  values.forEach((value,i)=>{
-    const x = getX(i);
-    const y = getY(value);
+  vals.forEach((v,i)=>{
+    let x=pad+(rs.length===1?pw/2:pw*i/(rs.length-1)),
+        y=pad+(max-v)/(max-min)*ph;
 
-    if(i === 0) ctx.moveTo(x,y);
+    if(i===0)ctx.moveTo(x,y);
     else ctx.lineTo(x,y);
   });
 
   ctx.stroke();
 
-  values.forEach((value,i)=>{
-    const x = getX(i);
-    const y = getY(value);
+  ctx.fillStyle="#333";
+
+  vals.forEach((v,i)=>{
+    let x=pad+(rs.length===1?pw/2:pw*i/(rs.length-1)),
+        y=pad+(max-v)/(max-min)*ph;
 
     ctx.beginPath();
-    ctx.arc(x,y,5,0,Math.PI*2);
-
-    ctx.fillStyle =
-      i === 0
-      ? "#777"
-      : records[i-1].type === "income"
-        ? "#008000"
-        : "#d00000";
-
+    ctx.arc(x,y,3,0,Math.PI*2);
     ctx.fill();
   });
-
-  const last = values.length - 1;
-
-  ctx.fillStyle = "#333";
-  ctx.font = "bold 12px sans-serif";
-  ctx.textAlign = "center";
-
-  ctx.fillText(
-    "¥" + values[last].toLocaleString(),
-    getX(last),
-    getY(values[last]) - 10
-  );
-
-  ctx.font = "11px sans-serif";
-  ctx.fillStyle = "#666";
-
-  values.forEach((value,i)=>{
-    ctx.fillText(
-      i === 0 ? "開始" : i,
-      getX(i),
-      graphHeight - 12
-    );
-  });
 }
+
+function trajectory(){
+  let rs=[...records].sort((a,b)=>a.ts-b.ts);
+
+  let best=0,
+      bestDate="なし",
+      balance=0,
+      maxExpense=null,
+      maxIncome=null,
+      maxIncrease=0,
+      maxDecrease=0,
+      incomeTotal=0,
+      expenseTotal=0,
+      firstRecord="なし";
+
+  if(rs.length){
+    firstRecord=new Date(rs[0].ts).toLocaleDateString("ja-JP");
+
+    rs.forEach(r=>{
+      let a=moneyValue(r.amount);
+
+      if(r.type=="income"){
+        incomeTotal+=a;
+
+        if(!maxIncome||a>maxIncome.amount){
+          maxIncome={amount:a,name:r.name,date:r.date};
+        }
+
+        if(a>maxIncrease)maxIncrease=a;
+        balance+=a;
+      }else{
+        expenseTotal+=a;
+
+        if(!maxExpense||a>maxExpense.amount){
+          maxExpense={amount:a,name:r.name,date:r.date};
+        }
+
+        if(a>maxDecrease)maxDecrease=a;
+        balance-=a;
+      }
+
+      if(balance>best){
+        best=balance;
+        bestDate=r.date;
+      }
+    });
+  }
+
+  let goalText="なし";
+
+  if(goal!==null&&rs.length){
+    let before=0;
+
+    for(let r of rs){
+      before+=r.type=="income"?moneyValue(r.amount):-moneyValue(r.amount);
+
+      if(before>=goal){
+        goalText="¥"+goal.toLocaleString()+"を"+r.date+"に達成";
+        break;
+      }
+    }
+  }
+
+  let savingBest=0,
+      savingCur=0,
+      prevExpense=false;
+
+  rs.forEach(r=>{
+    if(r.type=="expense"){
+      savingCur=0;
+      prevExpense=true;
+    }else{
+      if(prevExpense){
+        savingCur=1;
+      }else{
+        savingCur++;
+      }
+
+      savingBest=Math.max(savingBest,savingCur);
+      prevExpense=false;
+    }
+  });
+
+  document.getElementById("trBestBalance").textContent=
+    best>0?"¥"+best.toLocaleString()+"（"+bestDate+"）":"¥0";
+
+  document.getElementById("trMaxExpense").textContent=
+    maxExpense
+      ?maxExpense.name+" ¥"+maxExpense.amount.toLocaleString()
+      :"なし";
+
+  document.getElementById("trMaxIncome").textContent=
+    maxIncome
+      ?maxIncome.name+" ¥"+maxIncome.amount.toLocaleString()
+      :"なし";
+
+  document.getElementById("trGoal").textContent=goalText;
+  document.getElementById("trFirstRecord").textContent=firstRecord;
+  document.getElementById("trMaxIncrease").textContent="¥"+maxIncrease.toLocaleString();
+  document.getElementById("trMaxDecrease").textContent="¥"+maxDecrease.toLocaleString();
+  document.getElementById("trIncomeTotal").textContent="¥"+incomeTotal.toLocaleString();
+  document.getElementById("trExpenseTotal").textContent="¥"+expenseTotal.toLocaleString();
+  document.getElementById("trSavingDays").textContent=savingBest+"日";
+
+  let cd=JSON.parse(localStorage.getItem("okodukaiCoinData")||"{}"),
+      td=JSON.parse(localStorage.getItem("okodukaiTreeData")||"{}");
+
+  document.getElementById("trCoinTotal").textContent=
+    (Number(cd.totalEarned)||0).toLocaleString()+"コイン";
+
+  document.getElementById("trTreeGrowth").textContent=
+    (Number(td.growthCount)||0)+"回";
+}
+
+const treeForAch=JSON.parse(localStorage.getItem("okodukaiTreeData")||'{"spent":0,"growthCount":0}');
+const coinForAch=JSON.parse(localStorage.getItem("okodukaiCoinData")||'{"totalEarned":0,"monthStartTotalEarned":0}');
+
 function check(){
   let before=md.max;
+
   md.max=Math.max(md.max,bal());
+
   if(bal()>before)md.newHigh=true;
 
-  /* 一度解除した実績は、その月の間は解除済みのまま */
   defs.forEach((a,i)=>{
     if(!md.done[i]&&a[3]()){
       md.done[i]=true;
     }
   });
 
-  /* 20個以上の実績を解除したら「今月の達人」も解除 */
-  const achievedCount=Object.keys(md.done).filter(i=>+i<29).length;
+  const achievedCount=Object.keys(md.done)
+    .filter(i=>+i<29)
+    .length;
+
   if(!md.done[29]&&achievedCount>=20){
     md.done[29]=true;
   }
@@ -259,30 +596,173 @@ function check(){
   save();
   showAch();
 }
-function showAch(){am.textContent=now.getFullYear()+"年"+(now.getMonth()+1)+"月";ac.textContent=Object.keys(md.done).length+" / 30";achs.innerHTML=defs.map((a,i)=>`<div class="ach ${md.done[i]?"done":""}">${md.done[i]?"🏅":"🔒"} ${a[0]} <b>${a[1]}</b><div class="note">${a[2]}</div></div>`).join("")}
-function toggleAch(){achlist.classList.toggle("open");showAch()}
-function streak(n){let ds=[...new Set(md.opens)].sort();let best=0,cur=0,prev=null;for(let s of ds){let d=new Date(s);if(prev&&d-prev==86400000)cur++;else cur=1;best=Math.max(best,cur);prev=d}return best>=n}
-function weekOK(){let rs=mr().filter(r=>r.type=="expense");for(let i=0;i<rs.length;i++){let d=new Date(rs[i].ts),s=0;rs.forEach(q=>{if(q.type=="expense"&&q.ts>=d.getTime()&&q.ts<=d.getTime()+6*86400000)s+=+q.amount});if(s<=1000)return true}return false}
-function esc(s){return String(s).replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[m]))}function escA(s){return esc(s)}
-function clearFields(){nameEl().value=amountEl().value=""}
-function render(){balance.textContent="¥"+bal().toLocaleString();showHistory();showWishes();showGoal();showRank();draw();showAch()}
-let day=Math.floor(new Date(now.getFullYear(),now.getMonth(),now.getDate()).getTime()/86400000),qi=day%quotes.length;quote.textContent="💬 "+quotes[qi];if(!md.seen.includes(qi))md.seen.push(qi);let od=now.getFullYear()+"/"+(now.getMonth()+1)+"/"+now.getDate();if(!md.opens.includes(od))md.opens.push(od);save();check();render();window.onresize=draw;
+
+function showAch(){
+  am.textContent=now.getFullYear()+"年"+(now.getMonth()+1)+"月";
+  ac.textContent=Object.keys(md.done).length+" / 32";
+
+  achs.innerHTML=defs.map((a,i)=>
+    `<div class="ach ${md.done[i]?"done":""}">
+      ${md.done[i]?"🏅":"🔒"} ${a[0]} <b>${a[1]}</b>
+      <div class="note">${a[2]}</div>
+    </div>`
+  ).join("");
+}
+
+function toggleAch(){
+  achlist.classList.toggle("open");
+  showAch();
+}
+
+function streak(n){
+  let ds=[...new Set(md.opens)].sort(),
+      best=0,
+      cur=0,
+      prev=null;
+
+  for(let s of ds){
+    let d=new Date(s);
+
+    if(prev&&d-prev==86400000)cur++;
+    else cur=1;
+
+    best=Math.max(best,cur);
+    prev=d;
+  }
+
+  return best>=n;
+}
+
+function weekOK(){
+  let rs=mr().filter(r=>r.type=="expense");
+
+  for(let i=0;i<rs.length;i++){
+    let d=new Date(rs[i].ts),
+        s=0;
+
+    rs.forEach(q=>{
+      if(
+        q.type=="expense"&&
+        q.ts>=d.getTime()&&
+        q.ts<=d.getTime()+6*86400000
+      ){
+        s+=moneyValue(q.amount);
+      }
+    });
+
+    if(s<=1000)return true;
+  }
+
+  return false;
+}
+
+function esc(s){
+  return String(s).replace(
+    /[&<>"']/g,
+    m=>({
+      "&":"&amp;",
+      "<":"&lt;",
+      ">":"&gt;",
+      '"':"&quot;",
+      "'":"&#039;"
+    }[m])
+  );
+}
+
+function escA(s){
+  return esc(s);
+}
+
+function clearFields(){
+  nameEl().value=amountEl().value="";
+}
+
+function render(){
+  balance.textContent="¥"+bal().toLocaleString();
+  showHistory();
+  showWishes();
+  showGoal();
+  showRank();
+  draw();
+  trajectory();
+  showAch();
+
+  if(typeof renderTree==="function"){
+    renderTree();
+  }
+}
+
+let day=Math.floor(
+  new Date(
+    now.getFullYear(),
+    now.getMonth(),
+    now.getDate()
+  ).getTime()/86400000
+);
+
+let qi=day%quotes.length;
+
+quote.textContent="💬 "+quotes[qi];
+
+if(!md.seen.includes(qi)){
+  md.seen.push(qi);
+}
+
+let od=
+  now.getFullYear()+"/"+
+  (now.getMonth()+1)+"/"+
+  now.getDate();
+
+if(!md.opens.includes(od)){
+  md.opens.push(od);
+}
+
+save();
+check();
+render();
+
+window.onresize=draw;
 </script>
+
 <script>
-/* ===== コイン＆木（追加機能） ===== */
+/* ===== コイン＆木 ===== */
 (function(){
+
   const CK="okodukaiCoinData";
   const TK="okodukaiTreeData";
 
   let coin=JSON.parse(localStorage.getItem(CK)||"{}");
-  coin.balance=Number.isFinite(Number(coin.balance))?Number(coin.balance):0;
-  coin.totalEarned=Number.isFinite(Number(coin.totalEarned))?Number(coin.totalEarned):0;
-  coin.loginDays=Array.isArray(coin.loginDays)?coin.loginDays:[];
-  coin.noExpenseDays=Array.isArray(coin.noExpenseDays)?coin.noExpenseDays:[];
+
+  coin.balance=
+    Number.isFinite(Number(coin.balance))
+      ?Number(coin.balance):0;
+
+  coin.totalEarned=
+    Number.isFinite(Number(coin.totalEarned))
+      ?Number(coin.totalEarned):0;
+
+  coin.loginDays=
+    Array.isArray(coin.loginDays)
+      ?coin.loginDays:[];
+
+  coin.noExpenseDays=
+    Array.isArray(coin.noExpenseDays)
+      ?coin.noExpenseDays:[];
+
+  coin.monthStartTotalEarned=
+    Number.isFinite(Number(coin.monthStartTotalEarned))
+      ?Number(coin.monthStartTotalEarned)
+      :coin.totalEarned;
 
   let tree=JSON.parse(localStorage.getItem(TK)||"{}");
-  tree.spent=Number.isFinite(Number(tree.spent))?Number(tree.spent):0;
-  tree.growthCount=Number.isFinite(Number(tree.growthCount))?Number(tree.growthCount):0;
+
+  tree.spent=
+    Number.isFinite(Number(tree.spent))
+      ?Number(tree.spent):0;
+
+  tree.growthCount=
+    Number.isFinite(Number(tree.growthCount))
+      ?Number(tree.growthCount):0;
 
   const stages=[
     ["🌱","🌱 種",0],
@@ -293,46 +773,91 @@ let day=Math.floor(new Date(now.getFullYear(),now.getMonth(),now.getDate()).getT
     ["🌲","🌲 立派な木",10000],
     ["🌳🏆","🌳🏆 大樹",20000]
   ];
+
   const MAX=20000;
 
-  function saveCoin(){localStorage.setItem(CK,JSON.stringify(coin))}
-  function saveTree(){localStorage.setItem(TK,JSON.stringify(tree))}
-  function award(n){coin.balance+=n;coin.totalEarned+=n;saveCoin()}
+  function saveCoin(){
+    localStorage.setItem(CK,JSON.stringify(coin));
+  }
+
+  function saveTree(){
+    localStorage.setItem(TK,JSON.stringify(tree));
+  }
+
+  function award(n){
+    coin.balance+=n;
+    coin.totalEarned+=n;
+    saveCoin();
+  }
 
   function dateKey(d){
-    return d.getFullYear()+"/"+(d.getMonth()+1)+"/"+d.getDate();
+    return d.getFullYear()+"/"+
+      (d.getMonth()+1)+"/"+
+      d.getDate();
   }
+
   const today=dateKey(new Date());
 
-  // 1日1回ログインで50コイン
+  /* ログインで50コイン */
   if(!coin.loginDays.includes(today)){
     coin.loginDays.push(today);
     award(50);
+
     const log=document.getElementById("coinLog");
-    if(log) log.textContent="🎉 今日のログインボーナス！ +50コイン";
+
+    if(log){
+      log.textContent=
+        "🎉 今日のログインボーナス！ +50コイン";
+    }
   }
 
-  // 支出しなかった「記録済みの日」を一度だけ判定
-  // 既存の履歴を壊さず、現在の履歴から判定する。
+  /*
+   * 支出なしの日は100コイン。
+   * 収入がなくても、支出がなければ対象。
+   */
   try{
-    const rs=JSON.parse(localStorage.getItem("okodukaiRecords")||"[]");
+    const rs=JSON.parse(
+      localStorage.getItem("okodukaiRecords")||"[]"
+    );
+
     const days={};
+
     rs.forEach(r=>{
-      const d=r.date || "";
-      if(d) days[d] ||= {expense:false};
-      if(d && r.type==="expense") days[d].expense=true;
+      const d=r.date||"";
+
+      if(d){
+        days[d] ||= {expense:false};
+      }
+
+      if(d&&r.type==="expense"){
+        days[d].expense=true;
+      }
     });
+
     Object.keys(days).forEach(d=>{
-      if(!days[d].expense && !coin.noExpenseDays.includes(d)){
+      if(
+        !days[d].expense&&
+        !coin.noExpenseDays.includes(d)
+      ){
         coin.noExpenseDays.push(d);
         award(100);
       }
     });
+
   }catch(e){}
 
   function renderTree(){
-    const stage=stages.reduce((best,x)=>tree.spent>=x[2]?x:best,stages[0]);
-    const next=stages.find(x=>x[2]>tree.spent);
+
+    const stage=stages.reduce(
+      (best,x)=>
+        tree.spent>=x[2]?x:best,
+      stages[0]
+    );
+
+    const next=stages.find(
+      x=>x[2]>tree.spent
+    );
+
     const view=document.getElementById("treeView");
     const name=document.getElementById("treeStage");
     const progress=document.getElementById("treeProgress");
@@ -342,87 +867,160 @@ let day=Math.floor(new Date(now.getFullYear(),now.getMonth(),now.getDate()).getT
     const ce=document.getElementById("coinTotalEarned");
     const gc=document.getElementById("treeGrowthCount");
 
-    if(cb) cb.textContent=coin.balance.toLocaleString()+"コイン";
-    if(ce) ce.textContent=coin.totalEarned.toLocaleString()+"コイン";
-    if(gc) gc.textContent=tree.growthCount+"回";
-    if(view) view.textContent=stage[0];
-    if(name) name.textContent=stage[1];
+    if(cb){
+      cb.textContent=
+        coin.balance.toLocaleString()+"コイン";
+    }
+
+    if(ce){
+      ce.textContent=
+        coin.totalEarned.toLocaleString()+"コイン";
+    }
+
+    if(gc){
+      gc.textContent=
+        tree.growthCount+"回";
+    }
+
+    if(view){
+      view.textContent=stage[0];
+    }
+
+    if(name){
+      name.textContent=stage[1];
+    }
 
     if(tree.spent>=MAX){
-      if(progress) progress.style.width="100%";
-      if(text) text.textContent="🎉 木が最大まで成長しました！";
-      if(reset) reset.style.display="block";
+
+      if(progress){
+        progress.style.width="100%";
+      }
+
+      if(text){
+        text.textContent=
+          "🎉 木が最大まで成長しました！";
+      }
+
+      if(reset){
+        reset.style.display="block";
+      }
+
     }else{
+
       const nextCost=next[2];
       const prevCost=stage[2];
-      const pct=((tree.spent-prevCost)/(nextCost-prevCost))*100;
-      if(progress) progress.style.width=Math.max(0,Math.min(100,pct))+"%";
-      if(text) text.textContent="次の成長まで "+Math.max(0,nextCost-tree.spent).toLocaleString()+"コイン";
-      if(reset) reset.style.display="none";
+
+      const pct=
+        ((tree.spent-prevCost)/
+        (nextCost-prevCost))*100;
+
+      if(progress){
+        progress.style.width=
+          Math.max(0,Math.min(100,pct))+"%";
+      }
+
+      if(text){
+        text.textContent=
+          "次の成長まで "+
+          Math.max(0,nextCost-tree.spent)
+            .toLocaleString()+
+          "コイン";
+      }
+
+      if(reset){
+        reset.style.display="none";
+      }
     }
+
     saveTree();
+
+    const trCoin=document.getElementById("trCoinTotal");
+    const trTree=document.getElementById("trTreeGrowth");
+
+    if(trCoin){
+      trCoin.textContent=
+        coin.totalEarned.toLocaleString()+
+        "コイン";
+    }
+
+    if(trTree){
+      trTree.textContent=
+        tree.growthCount+"回";
+    }
   }
 
   window.useTreeCoins=function(){
+
     if(tree.spent>=MAX){
-      alert("木はすでに最大まで成長しています。");
-      return;
-    }
-    const next=stages.find(x=>x[2]>tree.spent);
-    if(!next)return;
-    const need=next[2]-tree.spent;
-    if(coin.balance<need){
-      alert("コインが足りません。あと"+(need-coin.balance).toLocaleString()+"コイン必要です。");
+      alert(
+        "木はすでに最大まで成長しています。"
+      );
       return;
     }
 
+    const next=stages.find(
+      x=>x[2]>tree.spent
+    );
+
+    if(!next)return;
+
+    const need=
+      next[2]-tree.spent;
+
+    if(coin.balance<need){
+      alert(
+        "コインが足りません。あと"+
+        (need-coin.balance).toLocaleString()+
+        "コイン必要です。"
+      );
+      return;
+    }
+
+    /*
+     * 次の段階まで必要なコインをまとめて使用。
+     * 1段階成長したので成長回数を+1。
+     */
     coin.balance-=need;
     tree.spent+=need;
-
-    /* 1段階成長するたびに成長回数を1増やす */
     tree.growthCount++;
 
     saveCoin();
     saveTree();
+
     renderTree();
+
+    if(typeof trajectory==="function"){
+      trajectory();
+    }
   };
 
   window.resetTree=function(){
-    if(tree.spent<MAX)return;
-    if(!confirm("最大まで育った木をリセットしますか？\n成長回数は記録として残ります。"))return;
 
-    /* リセットでは成長回数を増やさない */
+    if(tree.spent<MAX)return;
+
+    if(!confirm(
+      "最大まで育った木をリセットしますか？\n"+
+      "成長回数は記録として残ります。"
+    )){
+      return;
+    }
+
+    /*
+     * リセットしても、それ自体では
+     * 成長回数を増やさない。
+     */
     tree.spent=0;
 
     saveTree();
     renderTree();
+
+    if(typeof trajectory==="function"){
+      trajectory();
+    }
   };
 
   renderTree();
 
-  // 「支出しなかった日」の判定を、履歴追加後にも更新
-  const oldAddMoney=window.addMoney;
-  if(typeof oldAddMoney==="function"){
-    window.addMoney=function(){
-      oldAddMoney.apply(this,arguments);
-      try{
-        const rs=JSON.parse(localStorage.getItem("okodukaiRecords")||"[]");
-        const days={};
-        rs.forEach(r=>{
-          const d=r.date||"";
-          if(d) days[d] ||= false;
-          if(d && r.type==="expense") days[d]=true;
-        });
-        Object.keys(days).forEach(d=>{
-          if(!days[d] && !coin.noExpenseDays.includes(d)){
-            coin.noExpenseDays.push(d);
-            award(100);
-          }
-        });
-        renderTree();
-      }catch(e){}
-    };
-  }
 })();
 </script>
 
