@@ -49,6 +49,8 @@ function rank(){let inc=sum(records.filter(r=>r.type=="income")),b=bal();if(!inc
 function draw(){
 
   const canvas = document.getElementById("graph");
+  if(!canvas) return;
+
   const wrap = canvas.parentElement;
   const dpr = window.devicePixelRatio || 1;
 
@@ -62,12 +64,10 @@ function draw(){
 
   canvas.style.width = graphWidth + "px";
   canvas.style.height = graphHeight + "px";
-
   canvas.width = graphWidth * dpr;
   canvas.height = graphHeight * dpr;
 
   const ctx = canvas.getContext("2d");
-
   ctx.setTransform(dpr,0,0,dpr,0,0);
   ctx.clearRect(0,0,graphWidth,graphHeight);
 
@@ -75,11 +75,8 @@ function draw(){
   let current = 0;
 
   records.forEach(record => {
-    if(record.type === "income"){
-      current += Number(record.amount);
-    }else{
-      current -= Number(record.amount);
-    }
+    const amount = Number(record.amount) || 0;
+    current += record.type === "income" ? amount : -amount;
     values.push(current);
   });
 
@@ -104,22 +101,18 @@ function draw(){
   }
 
   const range = max - min;
-
   const left = 55;
   const right = 20;
   const top = 20;
   const bottom = 35;
-
   const width = graphWidth - left - right;
   const height = graphHeight - top - bottom;
 
-  function getX(index){
-    return left + width * index / (values.length - 1);
-  }
+  const getX = i =>
+    left + width * i / (values.length - 1);
 
-  function getY(value){
-    return top + height * (max - value) / range;
-  }
+  const getY = value =>
+    top + height * (max - value) / range;
 
   ctx.font = "11px sans-serif";
   ctx.textAlign = "right";
@@ -138,19 +131,19 @@ function draw(){
     ctx.fillStyle = "#666";
     ctx.fillText(
       "¥" + Math.round(value).toLocaleString(),
-      left-7,
-      y+4
+      left - 7,
+      y + 4
     );
   }
 
   if(min <= 0 && max >= 0){
-    const zeroY = getY(0);
+    const y = getY(0);
 
     ctx.strokeStyle = "#aaa";
     ctx.setLineDash([5,5]);
     ctx.beginPath();
-    ctx.moveTo(left,zeroY);
-    ctx.lineTo(graphWidth-right,zeroY);
+    ctx.moveTo(left,y);
+    ctx.lineTo(graphWidth-right,y);
     ctx.stroke();
     ctx.setLineDash([]);
   }
@@ -159,63 +152,53 @@ function draw(){
   ctx.lineWidth = 3;
   ctx.beginPath();
 
-  values.forEach((value,index)=>{
-    const x = getX(index);
+  values.forEach((value,i)=>{
+    const x = getX(i);
     const y = getY(value);
 
-    if(index===0){
-      ctx.moveTo(x,y);
-    }else{
-      ctx.lineTo(x,y);
-    }
+    if(i === 0) ctx.moveTo(x,y);
+    else ctx.lineTo(x,y);
   });
 
   ctx.stroke();
 
-  values.forEach((value,index)=>{
-    const x = getX(index);
+  values.forEach((value,i)=>{
+    const x = getX(i);
     const y = getY(value);
 
     ctx.beginPath();
     ctx.arc(x,y,5,0,Math.PI*2);
 
-    if(index===0){
-      ctx.fillStyle="#777";
-    }else{
-      ctx.fillStyle =
-        records[index-1].type === "income"
+    ctx.fillStyle =
+      i === 0
+      ? "#777"
+      : records[i-1].type === "income"
         ? "#008000"
         : "#d00000";
-    }
 
     ctx.fill();
   });
 
-  const lastIndex = values.length-1;
-  const lastX = getX(lastIndex);
-  const lastY = getY(values[lastIndex]);
+  const last = values.length - 1;
 
-  ctx.fillStyle="#333";
-  ctx.font="bold 12px sans-serif";
-  ctx.textAlign="center";
+  ctx.fillStyle = "#333";
+  ctx.font = "bold 12px sans-serif";
+  ctx.textAlign = "center";
 
   ctx.fillText(
-    "¥"+values[lastIndex].toLocaleString(),
-    lastX,
-    lastY-10
+    "¥" + values[last].toLocaleString(),
+    getX(last),
+    getY(values[last]) - 10
   );
 
-  ctx.font="11px sans-serif";
-  ctx.fillStyle="#666";
-  ctx.textAlign="center";
+  ctx.font = "11px sans-serif";
+  ctx.fillStyle = "#666";
 
-  values.forEach((value,index)=>{
-    const x=getX(index);
-
+  values.forEach((value,i)=>{
     ctx.fillText(
-      index===0 ? "開始" : index,
-      x,
-      graphHeight-12
+      i === 0 ? "開始" : i,
+      getX(i),
+      graphHeight - 12
     );
   });
 }
