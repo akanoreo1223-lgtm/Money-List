@@ -6,13 +6,13 @@ input,select,button{width:100%;box-sizing:border-box;padding:12px;margin-top:10p
 .item{display:flex;justify-content:space-between;align-items:center;padding:12px 0;border-bottom:1px solid #eee;gap:10px}.income{color:#080;font-weight:bold}.expense{color:#d00000;font-weight:bold}.delete{width:auto;padding:5px 10px;margin:0 0 0 6px;background:#999;font-size:13px}.empty{text-align:center;color:#888}
 .search{background:#f8f8f8;padding:12px;border-radius:10px;margin:10px 0 15px}.row{display:flex;gap:8px}.row>*{flex:1}.summary{background:#f8f8f8;padding:15px;border-radius:10px}.sr{display:flex;justify-content:space-between;padding:7px 0}.bold{font-weight:bold}.positive{color:#080}.negative{color:#d00000}.note{font-size:13px;color:#777}
 .can{color:#080;font-size:13px;font-weight:bold}.bought{color:#777;font-size:13px}.link{display:inline-block;width:auto;padding:5px 9px;background:#555;color:white;text-decoration:none;border-radius:6px;font-size:13px;margin-top:5px}
-#quote{text-align:center;font-weight:bold;font-size:18px;line-height:1.6}.chart-wrap{overflow-x:auto;overflow-y:hidden;border:1px solid #eee;border-radius:12px;background:#fff;padding:8px}.chart-inner{min-width:520px}.chart canvas{width:100%;height:300px;display:block}.chart-note{text-align:center}.rank{text-align:center}.ranknum{font-size:50px;font-weight:bold}.progressbar{height:18px;background:#ddd;border-radius:20px;overflow:hidden}.progress{height:100%;background:#333;width:0;transition:.3s}.goalmsg{text-align:center;font-weight:bold;margin-top:12px}.done{color:#080}.achlist{display:none}.achlist.open{display:block}.ach{padding:11px;background:#f5f5f5;border-radius:10px;margin:7px 0}.ach.done{background:#eef8ee}.achhead{display:flex;justify-content:space-between;font-weight:bold;margin-bottom:10px}
+#quote{text-align:center;font-weight:bold;font-size:18px;line-height:1.6}.chart canvas{width:100%;height:240px;display:block}.rank{text-align:center}.ranknum{font-size:50px;font-weight:bold}.progressbar{height:18px;background:#ddd;border-radius:20px;overflow:hidden}.progress{height:100%;background:#333;width:0;transition:.3s}.goalmsg{text-align:center;font-weight:bold;margin-top:12px}.done{color:#080}.achlist{display:none}.achlist.open{display:block}.ach{padding:11px;background:#f5f5f5;border-radius:10px;margin:7px 0}.ach.done{background:#eef8ee}.achhead{display:flex;justify-content:space-between;font-weight:bold;margin-bottom:10px}
 </style></head><body><div class="container"><h1>💰 お小遣い帳</h1>
 <div class="balance"><h2>現在の残高</h2><div id="balance">¥0</div></div>
 <section><select id="type"><option value="income">収入</option><option value="expense">支出</option></select><input id="name" placeholder="内容（例：お小遣い、ゲームなど）"><input id="amount" type="number" min="1" placeholder="金額"><button onclick="addMoney()">追加する</button></section>
 <section><h2>📋 履歴</h2><div class="search"><b>🔍 履歴を検索</b><input id="q" placeholder="内容で検索" oninput="showHistory()"><div class="row"><select id="cond" onchange="showHistory()"><option value="all">金額指定なし</option><option value="eq">同じ</option><option value="gte">以上</option><option value="lte">以下</option><option value="range">範囲</option></select><input id="qa" type="number" min="0" placeholder="金額" oninput="showHistory()"></div><input id="qb" type="number" min="0" placeholder="～ 金額" oninput="showHistory()" style="display:none"><button onclick="clearSearch()">検索をクリア</button></div><div id="history"></div></section>
 <section><h2>💬 今日の一言</h2><div id="quote"></div></section>
-<section class="chart"><h2>📈 残高グラフ</h2><div class="chart-wrap"><div class="chart-inner"><canvas id="graph"></canvas></div></div><div class="note chart-note">履歴を追加・削除すると自動更新されます。横にスクロールできます。</div></section>
+<section class="chart"><h2>📈 残高グラフ</h2><canvas id="graph"></canvas><div class="note" style="text-align:center">履歴を追加・削除すると自動更新されます。</div></section>
 <section><h2>🎁 欲しいものリスト</h2><div class="summary"><div class="sr"><span>欲しいもの総額</span><b id="wt">¥0</b></div><div class="sr"><span>現在の残高</span><b id="wb">¥0</b></div><div class="sr"><span>残高との差額</span><b id="diff">¥0</b></div><div class="note">※現在の残高 − 欲しいもの総額</div></div><input id="wn" placeholder="欲しいもの"><input id="wp" type="number" min="1" placeholder="値段"><input id="wl" type="url" placeholder="商品リンク（任意）"><button onclick="addWish()">欲しいものを追加</button><div id="wishlist"></div></section>
 <section class="rank"><h2>🏆 お小遣いランク</h2><div id="rank" class="ranknum">D</div><div id="rankdetail" class="note"></div></section>
 <section><h2>🎯 目標貯金</h2><div class="summary"><div class="sr"><span>目標金額</span><b id="ga">未設定</b></div><div class="sr"><span>現在の残高</span><b id="gb">¥0</b></div><div class="sr"><span>達成率</span><b id="gp">0%</b></div><div class="progressbar"><div id="prog" class="progress"></div></div><div id="gm" class="goalmsg">目標金額を設定してください。</div></div><input id="gi" type="number" min="1" placeholder="目標金額"><button onclick="setGoal()">目標金額を設定</button></section>
@@ -41,102 +41,11 @@ function delRecord(i){if(confirm("この記録を削除しますか？")){record
 function addWish(){let n=wn.value.trim(),p=+wp.value,l=wl.value.trim();if(!n||p<=0)return alert("欲しいものと値段を入力してください。");wishes.push({name:n,price:p,link:l,bought:false});save();wn.value=wp.value=wl.value="";render();check()}
 function buyWish(i){if(confirm("「"+wishes[i].name+"」を買ったことにしますか？")){wishes[i].bought=true;wishes[i].boughtDate=new Date().toLocaleDateString("ja-JP");save();render();check()}}
 function delWish(i){if(confirm("この欲しいものを削除しますか？")){wishes.splice(i,1);save();render();check()}}
-function showWishes(){let b=bal(),t=sum(wishes),d=b-t;wt.textContent="¥"+t.toLocaleString();wb.textContent="¥"+b.toLocaleString();diff.textContent=(d>=0?"+¥":"-¥")+Math.abs(d).toLocaleString();diff.className="bold "+(d>=0?"positive":"negative");let a=[...wishes].sort((x,y)=>(b>=y.price)-(b>=x.price)||(x.bought-y.bought)),el=document.getElementById("wishlist");el.innerHTML=a.length?a.map(w=>{let i=wishes.indexOf(w),can=b>=w.price;return `<div class="item"><div>🎁 ${esc(w.name)} ${can&&!w.bought?'<span class="can">買えます！</span>':''} ${w.bought?'<span class="bought">購入済み</span>':''}${w.link&&(w.link.startsWith("http://")||w.link.startsWith("https://"))?`<br><a class="link" href="${escA(w.link)}" target="_blank" rel="noopener">🔗 商品ページ</a>`:""}</div><div>¥${(+w.price).toLocaleString()} ${!w.bought?`<button class="delete" onclick="buyWish(${i})">買った！</button>`:""}<button class="delete" onclick="delWish(${i})">削除</button></div></div>`}).join(""):'<p class="empty">まだ欲しいものがありません。</p>'}
+function showWishes(){let b=bal(),t=wishes.reduce((total,w)=>total+(Number(w.price)||0),0),d=b-t;wt.textContent="¥"+t.toLocaleString();wb.textContent="¥"+b.toLocaleString();diff.textContent=(d>=0?"+¥":"-¥")+Math.abs(d).toLocaleString();diff.className="bold "+(d>=0?"positive":"negative");let a=[...wishes].sort((x,y)=>(b>=y.price)-(b>=x.price)||(x.bought-y.bought)),el=document.getElementById("wishlist");el.innerHTML=a.length?a.map(w=>{let i=wishes.indexOf(w),can=b>=w.price;return `<div class="item"><div>🎁 ${esc(w.name)} ${can&&!w.bought?'<span class="can">買えます！</span>':''} ${w.bought?'<span class="bought">購入済み</span>':''}${w.link&&(w.link.startsWith("http://")||w.link.startsWith("https://"))?`<br><a class="link" href="${escA(w.link)}" target="_blank" rel="noopener">🔗 商品ページ</a>`:""}</div><div>¥${(+w.price).toLocaleString()} ${!w.bought?`<button class="delete" onclick="buyWish(${i})">買った！</button>`:""}<button class="delete" onclick="delWish(${i})">削除</button></div></div>`}).join(""):'<p class="empty">まだ欲しいものがありません。</p>'}
 function setGoal(){let x=+gi.value;if(!x)return alert("1円以上の目標金額を入力してください。");goal=x;localStorage.setItem(G,goal);gi.value="";render();check()}
 function showGoal(){gb.textContent="¥"+bal().toLocaleString();if(goal===null){ga.textContent="未設定";gp.textContent="0%";prog.style.width="0%";gm.textContent="目標金額を設定してください。";return}ga.textContent="¥"+goal.toLocaleString();let p=bal()/goal*100,s=Math.max(0,Math.min(100,p));gp.textContent=s.toFixed(1)+"%";prog.style.width=s+"%";gm.textContent=bal()>=goal?"🎉 目標達成！":"あと¥"+(goal-bal()).toLocaleString()+"貯めれば目標達成！"}
 function rank(){let inc=sum(records.filter(r=>r.type=="income")),b=bal();if(!inc)return"D";let x=b/inc;return x>=.8?"S":x>=.6?"A":x>=.4?"B":x>=.2?"C":"D"}function showRank(){rankEl=document.getElementById("rank");rankEl.textContent=rank();rankdetail.textContent="累計収入 ¥"+sum(records.filter(r=>r.type=="income")).toLocaleString()+" / 現在の残高 ¥"+bal().toLocaleString()}
-function draw(){
-  const canvas=document.getElementById("graph");
-  const inner=canvas.parentElement;
-  const count=records.length;
-  const minWidth=520;
-  const pointGap=70;
-  const width=Math.max(minWidth,Math.max(1,count)*pointGap+70);
-  const height=300;
-  const d=window.devicePixelRatio||1;
-  canvas.style.width=width+"px";
-  canvas.style.height=height+"px";
-  canvas.width=Math.round(width*d);
-  canvas.height=Math.round(height*d);
-  const ctx=canvas.getContext("2d");
-  ctx.setTransform(d,0,0,d,0,0);
-  ctx.clearRect(0,0,width,height);
-
-  const values=[0];
-  let current=0;
-  records.forEach(r=>{
-    current += r.type==="income" ? Number(r.amount) : -Number(r.amount);
-    values.push(current);
-  });
-
-  if(values.length<2){
-    ctx.fillStyle="#777";
-    ctx.textAlign="center";
-    ctx.font="14px sans-serif";
-    ctx.fillText("履歴を追加するとグラフが表示されます",width/2,height/2);
-    return;
-  }
-
-  const pad={left:62,right:20,top:28,bottom:42};
-  const plotW=width-pad.left-pad.right;
-  const plotH=height-pad.top-pad.bottom;
-  let mn=Math.min(...values,0), mx=Math.max(...values,0);
-  if(mx===mn){mx+=100;mn-=100;}
-  const range=mx-mn;
-  const yFor=v=>pad.top+(mx-v)/range*plotH;
-  const xFor=i=>pad.left+(values.length===1?0:plotW*i/(values.length-1));
-
-  // 目盛り
-  ctx.font="11px sans-serif";
-  ctx.textAlign="right";
-  ctx.strokeStyle="#e5e5e5";
-  ctx.fillStyle="#777";
-  const ticks=5;
-  for(let i=0;i<=ticks;i++){
-    const value=mx-range*i/ticks;
-    const y=pad.top+plotH*i/ticks;
-    ctx.beginPath();ctx.moveTo(pad.left,y);ctx.lineTo(width-pad.right,y);ctx.stroke();
-    ctx.fillText("¥"+Math.round(value).toLocaleString(),pad.left-8,y+4);
-  }
-
-  // 0円ライン
-  const zeroY=yFor(0);
-  ctx.strokeStyle="#aaa";
-  ctx.setLineDash([5,4]);
-  ctx.beginPath();ctx.moveTo(pad.left,zeroY);ctx.lineTo(width-pad.right,zeroY);ctx.stroke();
-  ctx.setLineDash([]);
-
-  // 折れ線
-  ctx.strokeStyle="#333";
-  ctx.lineWidth=2.5;
-  ctx.beginPath();
-  values.forEach((v,i)=>{const x=xFor(i),y=yFor(v);i===0?ctx.moveTo(x,y):ctx.lineTo(x,y);});
-  ctx.stroke();
-
-  // 点・最新値
-  values.forEach((v,i)=>{
-    const x=xFor(i),y=yFor(v);
-    ctx.fillStyle="#fff";
-    ctx.strokeStyle="#333";
-    ctx.lineWidth=2;
-    ctx.beginPath();ctx.arc(x,y,4,0,Math.PI*2);ctx.fill();ctx.stroke();
-    if(i>0){
-      ctx.fillStyle="#555";
-      ctx.font="10px sans-serif";
-      ctx.textAlign="center";
-      ctx.fillText(i===values.length-1?"現在":"#"+i,x,y<pad.top+22?y+18:y-9);
-    }
-  });
-
-  ctx.fillStyle="#555";
-  ctx.font="12px sans-serif";
-  ctx.textAlign="left";
-  ctx.fillText("開始",pad.left,height-14);
-  ctx.textAlign="right";
-  ctx.fillText("現在",width-pad.right,height-14);
-
-  inner.style.width=width+"px";
-}
+function draw(){let c=graph,r=c.getBoundingClientRect(),d=devicePixelRatio||1,w=Math.max(300,r.width),h=240;c.width=w*d;c.height=h*d;let x=c.getContext("2d");x.scale(d,d);let v=[0],b=0;records.forEach(r=>{b+=r.type=="income"?+r.amount:-r.amount;v.push(b)});x.clearRect(0,0,w,h);if(v.length<2){x.textAlign="center";x.fillText("履歴を追加するとグラフが表示されます",w/2,h/2);return}let mn=Math.min(...v,0),mx=Math.max(...v,0),rg=mx-mn||1;x.beginPath();v.forEach((n,i)=>{let X=25+(w-35)*i/(v.length-1),Y=20+(h-45)*(mx-n)/rg;i?x.lineTo(X,Y):x.moveTo(X,Y)});x.stroke()}
 function check(){let before=md.max;md.max=Math.max(md.max,bal());if(bal()>before)md.newHigh=true;defs.forEach((a,i)=>{if(!md.done[i]&&a[3]())md.done[i]=true});if(!md.done[29]&&Object.keys(md.done).filter(i=>+i<29).length>=20)md.done[29]=true;save();showAch()}
 function showAch(){am.textContent=now.getFullYear()+"年"+(now.getMonth()+1)+"月";ac.textContent=Object.keys(md.done).length+" / 30";achs.innerHTML=defs.map((a,i)=>`<div class="ach ${md.done[i]?"done":""}">${md.done[i]?"🏅":"🔒"} ${a[0]} <b>${a[1]}</b><div class="note">${a[2]}</div></div>`).join("")}
 function toggleAch(){achlist.classList.toggle("open");showAch()}
