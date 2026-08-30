@@ -1,3 +1,9 @@
+
+スレッド
+15 GB 中 0% 使用済み
+利用規約 · プライバシー · プログラム ポリシー
+前回のアカウント アクティビティ: 30 分前
+詳細
 <!doctype html><html lang="ja"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>お小遣い帳</title>
 <style>
 body{font-family:sans-serif;background:#f5f5f5;margin:0;padding:20px;color:#222}.container{max-width:500px;margin:auto}h1{text-align:center}
@@ -202,7 +208,27 @@ function draw(){
     );
   });
 }
-function check(){let before=md.max;md.max=Math.max(md.max,bal());if(bal()>before)md.newHigh=true;defs.forEach((a,i)=>{if(!md.done[i]&&a[3]())md.done[i]=true});if(!md.done[29]&&Object.keys(md.done).filter(i=>+i<29).length>=20)md.done[29]=true;save();showAch()}
+function check(){
+  let before=md.max;
+  md.max=Math.max(md.max,bal());
+  if(bal()>before)md.newHigh=true;
+
+  /* 一度解除した実績は、その月の間は解除済みのまま */
+  defs.forEach((a,i)=>{
+    if(!md.done[i]&&a[3]()){
+      md.done[i]=true;
+    }
+  });
+
+  /* 20個以上の実績を解除したら「今月の達人」も解除 */
+  const achievedCount=Object.keys(md.done).filter(i=>+i<29).length;
+  if(!md.done[29]&&achievedCount>=20){
+    md.done[29]=true;
+  }
+
+  save();
+  showAch();
+}
 function showAch(){am.textContent=now.getFullYear()+"年"+(now.getMonth()+1)+"月";ac.textContent=Object.keys(md.done).length+" / 30";achs.innerHTML=defs.map((a,i)=>`<div class="ach ${md.done[i]?"done":""}">${md.done[i]?"🏅":"🔒"} ${a[0]} <b>${a[1]}</b><div class="note">${a[2]}</div></div>`).join("")}
 function toggleAch(){achlist.classList.toggle("open");showAch()}
 function streak(n){let ds=[...new Set(md.opens)].sort();let best=0,cur=0,prev=null;for(let s of ds){let d=new Date(s);if(prev&&d-prev==86400000)cur++;else cur=1;best=Math.max(best,cur);prev=d}return best>=n}
