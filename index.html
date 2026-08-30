@@ -75,6 +75,89 @@ function addMoney(){let type=typeEl().value,n=nameEl().value.trim(),a=+amountEl(
 function typeEl(){return document.getElementById("type")}function nameEl(){return document.getElementById("name")}function amountEl(){return document.getElementById("amount")}
 function showHistory(){let c=document.getElementById("cond").value,a=document.getElementById("qa").value,b=document.getElementById("qb").value,q=document.getElementById("q").value.toLowerCase();document.getElementById("qb").style.display=c=="range"?"block":"none";let rs=records.map((r,i)=>({...r,i})).filter(r=>{let n=+r.amount;if(q&&!r.name.toLowerCase().includes(q))return false;if(c=="eq"&&(a==""||n!=+a))return false;if(c=="gte"&&(a==""||n<+a))return false;if(c=="lte"&&(a==""||n>+a))return false;if(c=="range"&&(a==""||b==""||n<+a||n>+b))return false;return true}).reverse(),h=document.getElementById("history");h.innerHTML=rs.length?rs.map(r=>`<div class="item"><div><small>${esc(r.date)}</small><br>${esc(r.name)}</div><div><span class="${r.type=="income"?"income":"expense"}">${r.type=="income"?"+":"-"}¥${(+r.amount).toLocaleString()}</span><button class="delete" onclick="delRecord(${r.i})">削除</button></div></div>`).join(""):'<p class="empty">該当する履歴がありません。</p>'}
 function delRecord(i){if(confirm("この記録を削除しますか？")){records.splice(i,1);save();render();check()}}function clearSearch(){q.value="";cond.value="all";qa.value="";qb.value="";showHistory()}
+function addWish(){let n=wn.value.trim(),p=+wp.value,l=wl.value.trim();if(!n||p<=0)return alert("欲しいものと値段を入力してください。");wishes.push({name:n,price:p,link:l,bought:false});save();wn.value=wp.value=wl.value="";render();check()}
+function buyWish(i){
+  if(confirm("「"+wishes[i].name+"」を買ったことにしますか？")){
+    const price=moneyValue(wishes[i].price);
+    records.push({
+      type:"expense",
+      name:wishes[i].name,
+      amount:price,
+      date:new Date().toLocaleDateString("ja-JP"),
+      ts:Date.now()
+    });
+    wishes[i].bought=true;
+    wishes[i].boughtDate=new Date().toLocaleDateString("ja-JP");
+    save();
+    render();
+    check();
+  }
+}
+function delWish(i){if(confirm("この欲しいものを削除しますか？")){wishes.splice(i,1);save();render();check()}}
+function showWishes(){let b=bal(),t=wishes.reduce((x,w)=>x+moneyValue(w.price),0),d=b-t;wt.textContent="¥"+t.toLocaleString();wb.textContent="¥"+b.toLocaleString();diff.textContent=(d>=0?"+¥":"-¥")+Math.abs(d).toLocaleString();diff.className="bold "+(d>=0?"positive":"negative");let a=[...wishes].sort((x,y)=>(b>=moneyValue(y.price))-(b>=moneyValue(x.price))||(x.bought-y.bought)),el=document.getElementById("wishlist");el.innerHTML=a.length?a.map(w=>{let i=wishes.indexOf(w),price=moneyValue(w.price),can=b>=price;return `<div class="item"><div>🎁 ${esc(w.name)} ${can&&!w.bought?'<span class="can">買えます！</span>':''} ${w.bought?'<span class="bought">購入済み</span>':''}${w.link&&(w.link.startsWith("http://")||w.link.startsWith("https://"))?`<br><a class="link" href="${escA(w.link)}" target="_blank" rel="noopener">🔗 商品ページ</a>`:""}</div><div>¥${price.toLocaleString()} ${!w.bought?`<button class="delete" onclick="buyWish(${i})">買った！</button>`:""}<button class="delete" onclick="delWish(${i})">削除</button></div></div>`}).join(""):'<p class="empty">まだ欲しいものがありません。</p>'}
+function setGoal(){let x=+gi.value;if(!x)return alert("1円以上の目標金額を入力してください。");goal=x;localStorage.setItem(G,goal);gi.value="";render();check()}
+function showGoal(){gb.textContent="¥"+bal().toLocaleString();if(goal===null){ga.textContent="未設定";gp.textContent="0%";prog.style.width="0%";gm.textContent="目標金額を設定してください。";return}ga.textContent="¥"+goal.toLocaleString();let p=bal()/goal*100,s=Math.max(0,Math.min(100,p));gp.textContent=s.toFixed(1)+"%";prog.style.width=s+"%";gm.textContent=bal()>=goal?"🎉 目標達成！":"あと¥"+(goal-bal()).toLocaleString()+"貯めれば目標達成！"}
+function rank(){let inc=sum(records.filter(r=>r.type=="income")),b=bal();if(!inc)return"D";let x=b/inc;return x>=.8?"S":x>=.6?"A":x>=.4?"B":x>=.2?"C":"D"}function showRank(){rankEl=document.getElementById("rank");rankEl.textContent=rank();rankdetail.textContent="累計収入 ¥"+sum(records.filter(r=>r.type=="income")).toLocaleString()+" / 現在の残高 ¥"+bal().toLocaleString()}
+function draw(){
+
+  const canvas = document.getElementById("graph");
+  if(!canvas) return;
+
+  const wrap = canvas.parentElement;
+  const dpr = window.devicePixelRatio || 1;
+
+  const graphWidth =
+    Math.max(
+      wrap.clientWidth,
+      Math.max(1, records.length) * 75 + 70
+    );
+
+  const graphHeight = 240;
+
+  canvas.style.width = graphWidth + "px";
+  canvas.style.height = graphHeight + "px";
+  canvas.width = graphWidth * dpr;
+  canvas.height = graphHeight * dpr;
+
+  const ctx = canvas.getContext("2d");
+  ctx.setTransform(dpr,0,0,dpr,0,0);
+  ctx.clearRect(0,0,graphWidth,graphHeight);
+
+  const values = [0];
+  let current = 0;
+
+  records.forEach(record => {
+    const amount = Number(record.amount) || 0;
+    current += record.type === "income" ? amount : -amount;
+    values.push(current);
+  });
+
+  if(values.length === 1){
+    ctx.fillStyle = "#777";
+    ctx.font = "14px sans-serif";
+    ctx.textAlign = "center";
+    ctx.fillText(
+      "履歴を追加するとグラフが表示されます",
+      graphWidth / 2,
+      graphHeight / 2
+    );
+    return;
+  }
+
+  let max = Math.max(...values,0);
+  let min = Math.min(...values,0);
+
+  if(max === min){
+    max += 100;
+    min -= 100;
+  }
+
+  const range = max - min;
+  const left = 55;
+  const right = 20;
+  const top = 20;
+  const bottom = 35;
+  const width = graphWidth - left - right;
   const height = graphHeight - top - bottom;
 
   const getX = i =>
@@ -143,6 +226,33 @@ function delRecord(i){if(confirm("この記録を削除しますか？")){record
       ? "#777"
       : records[i-1].type === "income"
         ? "#008000"
+        : "#d00000";
+
+    ctx.fill();
+  });
+
+  const last = values.length - 1;
+
+  ctx.fillStyle = "#333";
+  ctx.font = "bold 12px sans-serif";
+  ctx.textAlign = "center";
+
+  ctx.fillText(
+    "¥" + values[last].toLocaleString(),
+    getX(last),
+    getY(values[last]) - 10
+  );
+
+  ctx.font = "11px sans-serif";
+  ctx.fillStyle = "#666";
+
+  values.forEach((value,i)=>{
+    ctx.fillText(
+      i === 0 ? "開始" : i,
+      getX(i),
+      graphHeight - 12
+    );
+  });        ? "#008000"
         : "#d00000";
 
     ctx.fill();
@@ -301,27 +411,17 @@ let day=Math.floor(new Date(now.getFullYear(),now.getMonth(),now.getDate()).getT
       alert("木はすでに最大まで成長しています。");
       return;
     }
-
     const next=stages.find(x=>x[2]>tree.spent);
     if(!next)return;
-
     const need=next[2]-tree.spent;
-
     if(coin.balance<need){
       alert("コインが足りません。あと"+(need-coin.balance).toLocaleString()+"コイン必要です。");
       return;
     }
-
     coin.balance-=need;
     tree.spent+=need;
 
-    /*
-     * 変更点②
-     * コインを使って木が1段階成長するたびに
-     * 成長回数を1回増やす。
-     *
-     * 最大まで育った後のリセットでは増やさない。
-     */
+    /* 1段階成長するたびに成長回数を1増やす */
     tree.growthCount++;
 
     saveCoin();
@@ -331,13 +431,9 @@ let day=Math.floor(new Date(now.getFullYear(),now.getMonth(),now.getDate()).getT
 
   window.resetTree=function(){
     if(tree.spent<MAX)return;
-
     if(!confirm("最大まで育った木をリセットしますか？\n成長回数は記録として残ります。"))return;
 
-    /*
-     * リセットでは成長回数を増やさない。
-     * 成長回数は「1段階成長した回数」を記録する。
-     */
+    /* リセットでは成長回数を増やさない */
     tree.spent=0;
 
     saveTree();
@@ -351,65 +447,24 @@ let day=Math.floor(new Date(now.getFullYear(),now.getMonth(),now.getDate()).getT
   if(typeof oldAddMoney==="function"){
     window.addMoney=function(){
       oldAddMoney.apply(this,arguments);
-
       try{
         const rs=JSON.parse(localStorage.getItem("okodukaiRecords")||"[]");
         const days={};
-
         rs.forEach(r=>{
           const d=r.date||"";
           if(d) days[d] ||= false;
           if(d && r.type==="expense") days[d]=true;
         });
-
         Object.keys(days).forEach(d=>{
-          if(!days[d]&&!coin.noExpenseDays.includes(d)){
+          if(!days[d] && !coin.noExpenseDays.includes(d)){
             coin.noExpenseDays.push(d);
             award(100);
           }
         });
-
         renderTree();
       }catch(e){}
     };
   }
-
-  /*
-   * ============================================================
-   * 変更点①
-   * 「買った！」を押したとき、購入済みにするだけではなく、
-   * その金額を正式な支出履歴として追加する。
-   * ============================================================
-   */
-  window.buyWish=function(i){
-    const w=wishes[i];
-
-    if(!w)return;
-
-    if(confirm("「"+w.name+"」を買ったことにしますか？")){
-      const price=moneyValue(w.price);
-
-      /*
-       * 欲しいものの購入を支出として記録。
-       * これにより残高・履歴・グラフにも反映される。
-       */
-      records.push({
-        type:"expense",
-        name:w.name,
-        amount:price,
-        date:new Date().toLocaleDateString("ja-JP"),
-        ts:Date.now()
-      });
-
-      w.bought=true;
-      w.boughtDate=new Date().toLocaleDateString("ja-JP");
-
-      save();
-      render();
-      check();
-    }
-  };
-
 })();
 </script>
 
