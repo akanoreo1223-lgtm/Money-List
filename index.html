@@ -274,6 +274,30 @@ function trajectory(){
   );
 }
 
+function actualBalanceAtRecords(rs){
+  let b=0;
+  (Array.isArray(rs)?rs:[]).forEach(r=>{
+    const a=moneyValue(r.amount);
+    b += r.type==="income" ? a : -a;
+  });
+  return b;
+}
+
+function actualBalanceHistory(){
+  const rs=(Array.isArray(records)?records:[]).slice().sort((a,b)=>
+    (Number(a.ts)||0)-(Number(b.ts)||0)
+  );
+  let b=0, best=0;
+  const history=[];
+  rs.forEach(r=>{
+    const a=moneyValue(r.amount);
+    b += r.type==="income" ? a : -a;
+    best=Math.max(best,b);
+    history.push({record:r,balance:b});
+  });
+  return {records:rs,history,balance:b,best};
+}
+
 function draw(){
   let c=document.getElementById("graph"),
       ctx=c.getContext("2d"),
@@ -599,7 +623,7 @@ const treeForAch = new Proxy({}, {get(_,p){const x=JSON.parse(localStorage.getIt
     });
 
     const set=(id,v)=>{const e=document.getElementById(id);if(e)e.textContent=v};
-    set("trBestBalance","¥"+best.toLocaleString());
+    set("trBestBalance","¥"+actualBalanceHistory().best.toLocaleString());
     set("trMaxExpense",maxExp?maxExp.name+" ¥"+maxExp.amount.toLocaleString():"なし");
     set("trMaxIncome",maxIncome?maxIncome.name+" ¥"+maxIncome.amount.toLocaleString():"なし");
     set("trGoal",goal!==null&&bal()>=goal?"¥"+Number(goal).toLocaleString()+"を達成":"なし");
