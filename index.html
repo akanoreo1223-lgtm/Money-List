@@ -103,8 +103,22 @@ function moneyValue(v){if(typeof v==="number"&&Number.isFinite(v))return v;const
 function mr(){return records.filter(r=>{let d=new Date(r.ts||0);return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")==mk})}
 function addMoney(){let type=typeEl().value,n=nameEl().value.trim(),a=+amountEl().value;if(!n||a<=0)return alert("内容と金額を入力してください。");records.push({type,name:n,amount:a,date:new Date().toLocaleDateString("ja-JP"),ts:Date.now()});save();clearFields();render();check()}
 function typeEl(){return document.getElementById("type")}function nameEl(){return document.getElementById("name")}function amountEl(){return document.getElementById("amount")}
-function showHistory(){let c=document.getElementById("cond").value,a=document.getElementById("qa").value,b=document.getElementById("qb").value,q=document.getElementById("q").value.toLowerCase();document.getElementById("qb").style.display=c=="range"?"block":"none";let rs=records.map((r,i)=>({...r,i})).filter(r=>{let n=+r.amount;if(q&&!r.name.toLowerCase().includes(q))return false;if(c=="eq"&&(a==""||n!=+a))return false;if(c=="gte"&&(a==""||n<+a))return false;if(c=="lte"&&(a==""||n>+a))return false;if(c=="range"&&(a==""||b==""||n<+a||n>+b))return false;return true}).reverse(),h=document.getElementById("history");h.innerHTML=rs.length?rs.map(r=>`<div class="item"><div><small>${esc(r.date)}</small><br>${esc(r.name)}${r.trajectoryExcluded?'<br><span class="note">📜 軌跡から除外中</span>':""}</div><div><span class="${r.type=="income"?"income":"expense"}">${r.type=="income"?"+":"-"}¥${(+r.amount).toLocaleString()}</span><label class="note" style="display:block;margin-top:5px;cursor:pointer;"><input type="checkbox" style="width:auto;margin:0 4px 0 0;padding:0;" ${r.trajectoryExcluded?"checked":""} onchange="toggleTrajectory(${r.i},this.checked)">軌跡から除外</label><button class="delete" onclick="delRecord(${r.i})">削除</button></div></div>`).join(""):'<p class="empty">該当する履歴がありません。</p>'}
-function toggleTrajectory(i,excluded){if(!records[i])return;records[i].trajectoryExcluded=!!excluded;save();render();check()}
+function showHistory(){let c=document.getElementById("cond").value,a=document.getElementById("qa").value,b=document.getElementById("qb").value,q=document.getElementById("q").value.toLowerCase();document.getElementById("qb").style.display=c=="range"?"block":"none";let rs=records.map((r,i)=>({...r,i})).filter(r=>{let n=+r.amount;if(q&&!r.name.toLowerCase().includes(q))return false;if(c=="eq"&&(a==""||n!=+a))return false;if(c=="gte"&&(a==""||n<+a))return false;if(c=="lte"&&(a==""||n>+a))return false;if(c=="range"&&(a==""||b==""||n<+a||n>+b))return false;return true}).reverse(),h=document.getElementById("history");h.innerHTML=rs.length?rs.map(r=>`<div class="item"><div><small>${esc(r.date)}</small><br>${esc(r.name)}${r.trajectoryExcluded?'<br><span class="note">📜 軌跡から除外中</span>':""}</div><div><span class="${r.type=="income"?"income":"expense"}">${r.type=="income"?"+":"-"}¥${(+r.amount).toLocaleString()}</span><label class="note" style="display:block;margin-top:5px;cursor:pointer;"><input type="checkbox" style="width:auto;margin:0 4px 0 0;padding:0;" ${r.trajectoryExcluded?"checked":""} onchange="toggleTrajectory(${r.i},Boolean(this.checked))">軌跡から除外</label><button class="delete" onclick="delRecord(${r.i})">削除</button></div></div>`).join(""):'<p class="empty">該当する履歴がありません。</p>'}
+function toggleTrajectory(i,excluded){
+  if(!records[i])return;
+
+  records[i].trajectoryExcluded=Boolean(excluded);
+
+  save();
+
+  /* 軌跡だけを即時再計算 */
+  trajectory();
+
+  /* チェック状態を保持したまま履歴表示を更新 */
+  showHistory();
+
+  check();
+}
 function delRecord(i){if(confirm("この記録を削除しますか？")){records.splice(i,1);save();render();check()}}function clearSearch(){q.value="";cond.value="all";qa.value="";qb.value="";showHistory()} 
 function addWish(){let n=wn.value.trim(),p=+wp.value,l=wl.value.trim();if(!n||p<=0)return alert("欲しいものと値段を入力してください。");wishes.push({name:n,price:p,link:l,bought:false});save();wn.value=wp.value=wl.value="";render();check()}
 function buyWish(i){
@@ -128,217 +142,249 @@ function setGoal(){let x=+gi.value;if(!x)return alert("1円以上の目標金額
 function showGoal(){gb.textContent="¥"+bal().toLocaleString();if(goal===null){ga.textContent="未設定";gp.textContent="0%";prog.style.width="0%";gm.textContent="目標金額を設定してください。";return}ga.textContent="¥"+goal.toLocaleString();let p=bal()/goal*100,s=Math.max(0,Math.min(100,p));gp.textContent=s.toFixed(1)+"%";prog.style.width=s+"%";gm.textContent=bal()>=goal?"🎉 目標達成！":"あと¥"+(goal-bal()).toLocaleString()+"貯めれば目標達成！"}
 function rank(){let inc=sum(records.filter(r=>r.type=="income")),b=bal();if(!inc)return"D";let x=b/inc;return x>=.8?"S":x>=.6?"A":x>=.4?"B":x>=.2?"C":"D"}function showRank(){rankEl=document.getElementById("rank");rankEl.textContent=rank();rankdetail.textContent="累計収入 ¥"+sum(records.filter(r=>r.type=="income")).toLocaleString()+" / 現在の残高 ¥"+bal().toLocaleString()}
 function trajectory(){
-  let rs=[...records].filter(r=>!r.trajectoryExcluded).sort((a,b)=>(a.ts||0)-(b.ts||0));
-  let balance=0,best=0,bestDate="なし",maxExpense=null,maxIncome=null,maxIncrease=0,maxDecrease=0,incomeTotal=0,expenseTotal=0;
+  /* 軌跡用の履歴だけを作る。
+     trajectoryExcluded=true の記録は、削除せず軌跡計算からだけ除外する。 */
+  let rs=[...records]
+    .filter(r=>r.trajectoryExcluded!==true)
+    .sort((a,b)=>(a.ts||0)-(b.ts||0));
+
+  let best=0,
+      bestDate="なし",
+      balance=0,
+      maxExpense=null,
+      maxIncome=null,
+      maxIncrease=0,
+      maxDecrease=0,
+      incomeTotal=0,
+      expenseTotal=0;
+
+  if(rs.length){
+    rs.forEach(r=>{
+      let a=moneyValue(r.amount);
+
+      if(r.type=="income"){
+        incomeTotal+=a;
+        balance+=a;
+
+        if(!maxIncome||a>maxIncome.amount){
+          maxIncome={
+            amount:a,
+            name:r.name,
+            date:r.date
+          };
+        }
+
+        if(a>maxIncrease)maxIncrease=a;
+
+      }else{
+        expenseTotal+=a;
+        balance-=a;
+
+        if(!maxExpense||a>maxExpense.amount){
+          maxExpense={
+            amount:a,
+            name:r.name,
+            date:r.date
+          };
+        }
+
+        if(a>maxDecrease)maxDecrease=a;
+      }
+
+      if(balance>best){
+        best=balance;
+        bestDate=r.date;
+      }
+    });
+  }
+
   let firstRecord=rs.length?rs[0].date:"なし";
 
-  rs.forEach(r=>{
-    let a=moneyValue(r.amount);
-    if(r.type=="income"){
-      balance+=a; incomeTotal+=a;
-      if(!maxIncome||a>maxIncome.amount)maxIncome={amount:a,name:r.name,date:r.date};
-      if(a>maxIncrease)maxIncrease=a;
-    }else{
-      balance-=a; expenseTotal+=a;
-      if(!maxExpense||a>maxExpense.amount)maxExpense={amount:a,name:r.name,date:r.date};
-      if(a>maxDecrease)maxDecrease=a;
-    }
-    if(balance>best){best=balance;bestDate=r.date;}
-  });
-
   let goalText="なし";
+
   if(goal!==null&&rs.length){
     let running=0;
+
     for(let r of rs){
-      running+=r.type=="income"?moneyValue(r.amount):-moneyValue(r.amount);
-      if(running>=goal){goalText="¥"+goal.toLocaleString()+"を"+r.date+"に達成";break;}
+      running+=r.type=="income"
+        ?moneyValue(r.amount)
+        :-moneyValue(r.amount);
+
+      if(running>=goal){
+        goalText=
+          "¥"+goal.toLocaleString()+
+          "を"+r.date+"に達成";
+        break;
+      }
     }
   }
 
-  let savingBest=0,savingCur=0,prevDate=null;
+  let savingBest=0,
+      savingCur=0,
+      prevExpenseDate=null;
+
   rs.forEach(r=>{
+    if(r.type=="expense"){
+      savingCur=0;
+      prevExpenseDate=null;
+      return;
+    }
+
     let d=new Date(r.ts||0);
-    if(r.type=="expense"){savingCur=0;prevDate=null;return;}
-    if(prevDate){
-      let diff=Math.floor((d-prevDate)/86400000);
+
+    if(prevExpenseDate){
+      let diff=Math.floor(
+        (d-prevExpenseDate)/86400000
+      );
+
       savingCur=diff<=1?savingCur+1:1;
-    }else savingCur=1;
-    savingBest=Math.max(savingBest,savingCur);
-    prevDate=d;
+    }else{
+      savingCur=1;
+    }
+
+    savingBest=Math.max(
+      savingBest,
+      savingCur
+    );
+
+    prevExpenseDate=d;
   });
 
-  const set=(id,value)=>{const el=document.getElementById(id);if(el)el.textContent=value;};
-  set("trBestBalance",best>0?"¥"+best.toLocaleString()+"（"+bestDate+"）":"¥0");
-  set("trMaxExpense",maxExpense?maxExpense.name+" ¥"+maxExpense.amount.toLocaleString():"なし");
-  set("trMaxIncome",maxIncome?maxIncome.name+" ¥"+maxIncome.amount.toLocaleString():"なし");
+  const set=(id,value)=>{
+    const el=document.getElementById(id);
+    if(el)el.textContent=value;
+  };
+
+  set(
+    "trBestBalance",
+    best>0
+      ?"¥"+best.toLocaleString()+
+       "（"+bestDate+"）"
+      :"¥0"
+  );
+
+  set(
+    "trMaxExpense",
+    maxExpense
+      ?maxExpense.name+
+       " ¥"+maxExpense.amount.toLocaleString()
+      :"なし"
+  );
+
+  set(
+    "trMaxIncome",
+    maxIncome
+      ?maxIncome.name+
+       " ¥"+maxIncome.amount.toLocaleString()
+      :"なし"
+  );
+
   set("trGoal",goalText);
   set("trFirstRecord",firstRecord);
-  set("trMaxIncrease","¥"+maxIncrease.toLocaleString());
-  set("trMaxDecrease","¥"+maxDecrease.toLocaleString());
-  set("trIncomeTotal","¥"+incomeTotal.toLocaleString());
-  set("trExpenseTotal","¥"+expenseTotal.toLocaleString());
-  set("trSavingDays",savingBest+"日");
+  set(
+    "trMaxIncrease",
+    "¥"+maxIncrease.toLocaleString()
+  );
+  set(
+    "trMaxDecrease",
+    "¥"+maxDecrease.toLocaleString()
+  );
+  set(
+    "trIncomeTotal",
+    "¥"+incomeTotal.toLocaleString()
+  );
+  set(
+    "trExpenseTotal",
+    "¥"+expenseTotal.toLocaleString()
+  );
+  set(
+    "trSavingDays",
+    savingBest+"日"
+  );
 
-  let cd=JSON.parse(localStorage.getItem("okodukaiCoinData")||"{}");
-  let td=JSON.parse(localStorage.getItem("okodukaiTreeData")||"{}");
-  set("trCoinTotal",(Number(cd.totalEarned)||0).toLocaleString()+"コイン");
-  set("trTreeGrowth",(Number(td.growthCount)||0)+"回");
+  let cd=JSON.parse(
+    localStorage.getItem("okodukaiCoinData")||"{}"
+  );
+
+  let td=JSON.parse(
+    localStorage.getItem("okodukaiTreeData")||"{}"
+  );
+
+  set(
+    "trCoinTotal",
+    (Number(cd.totalEarned)||0)
+      .toLocaleString()+"コイン"
+  );
+
+  set(
+    "trTreeGrowth",
+    (Number(td.growthCount)||0)+"回"
+  );
 }
 
 function draw(){
+  let c=document.getElementById("graph"),
+      ctx=c.getContext("2d"),
+      rs=[...records].sort((a,b)=>(a.ts||0)-(b.ts||0));
 
-  const canvas = document.getElementById("graph");
-  if(!canvas) return;
+  let dpr=window.devicePixelRatio||1,
+      w=520,
+      h=240;
 
-  const wrap = canvas.parentElement;
-  const dpr = window.devicePixelRatio || 1;
+  c.width=w*dpr;
+  c.height=h*dpr;
+  c.style.width=w+"px";
+  c.style.height=h+"px";
+  ctx.scale(dpr,dpr);
+  ctx.clearRect(0,0,w,h);
 
-  const graphWidth =
-    Math.max(
-      wrap.clientWidth,
-      Math.max(1, records.length) * 75 + 70
-    );
-
-  const graphHeight = 240;
-
-  canvas.style.width = graphWidth + "px";
-  canvas.style.height = graphHeight + "px";
-  canvas.width = graphWidth * dpr;
-  canvas.height = graphHeight * dpr;
-
-  const ctx = canvas.getContext("2d");
-  ctx.setTransform(dpr,0,0,dpr,0,0);
-  ctx.clearRect(0,0,graphWidth,graphHeight);
-
-  const values = [0];
-  let current = 0;
-
-  records.forEach(record => {
-    const amount = Number(record.amount) || 0;
-    current += record.type === "income" ? amount : -amount;
-    values.push(current);
-  });
-
-  if(values.length === 1){
-    ctx.fillStyle = "#777";
-    ctx.font = "14px sans-serif";
-    ctx.textAlign = "center";
-    ctx.fillText(
-      "履歴を追加するとグラフが表示されます",
-      graphWidth / 2,
-      graphHeight / 2
-    );
+  if(!rs.length){
+    ctx.fillStyle="#888";
+    ctx.textAlign="center";
+    ctx.font="14px sans-serif";
+    ctx.fillText("まだ記録がありません。",w/2,h/2);
     return;
   }
 
-  let max = Math.max(...values,0);
-  let min = Math.min(...values,0);
-
-  if(max === min){
-    max += 100;
-    min -= 100;
-  }
-
-  const range = max - min;
-  const left = 55;
-  const right = 20;
-  const top = 20;
-  const bottom = 35;
-  const width = graphWidth - left - right;
-  const height = graphHeight - top - bottom;
-
-  const getX = i =>
-    left + width * i / (values.length - 1);
-
-  const getY = value =>
-    top + height * (max - value) / range;
-
-  ctx.font = "11px sans-serif";
-  ctx.textAlign = "right";
-  ctx.lineWidth = 1;
-
-  for(let i=0;i<=5;i++){
-    const value = max - range * i / 5;
-    const y = getY(value);
-
-    ctx.strokeStyle = "#ddd";
-    ctx.beginPath();
-    ctx.moveTo(left,y);
-    ctx.lineTo(graphWidth-right,y);
-    ctx.stroke();
-
-    ctx.fillStyle = "#666";
-    ctx.fillText(
-      "¥" + Math.round(value).toLocaleString(),
-      left - 7,
-      y + 4
-    );
-  }
-
-  if(min <= 0 && max >= 0){
-    const y = getY(0);
-
-    ctx.strokeStyle = "#aaa";
-    ctx.setLineDash([5,5]);
-    ctx.beginPath();
-    ctx.moveTo(left,y);
-    ctx.lineTo(graphWidth-right,y);
-    ctx.stroke();
-    ctx.setLineDash([]);
-  }
-
-  ctx.strokeStyle = "#333";
-  ctx.lineWidth = 3;
-  ctx.beginPath();
-
-  values.forEach((value,i)=>{
-    const x = getX(i);
-    const y = getY(value);
-
-    if(i === 0) ctx.moveTo(x,y);
-    else ctx.lineTo(x,y);
+  let vals=[], b=0;
+  rs.forEach(r=>{
+    b+=r.type=="income"?moneyValue(r.amount):-moneyValue(r.amount);
+    vals.push(b);
   });
 
+  let min=Math.min(0,...vals), max=Math.max(0,...vals);
+  if(min===max){min-=100;max+=100;}
+
+  let pad=35,pw=w-pad*2,ph=h-pad*2;
+
+  ctx.strokeStyle="#ddd";
+  ctx.lineWidth=1;
+  ctx.beginPath();
+  ctx.moveTo(pad,pad);
+  ctx.lineTo(pad,h-pad);
+  ctx.lineTo(w-pad,h-pad);
   ctx.stroke();
 
-  values.forEach((value,i)=>{
-    const x = getX(i);
-    const y = getY(value);
+  /* グラフは従来どおり全履歴を対象にする */
+  ctx.strokeStyle="#333";
+  ctx.lineWidth=2;
+  ctx.beginPath();
 
-    ctx.beginPath();
-    ctx.arc(x,y,5,0,Math.PI*2);
-
-    ctx.fillStyle =
-      i === 0
-      ? "#777"
-      : records[i-1].type === "income"
-        ? "#008000"
-        : "#d00000";
-
-    ctx.fill();
+  vals.forEach((v,i)=>{
+    let x=pad+(rs.length===1?pw/2:pw*i/(rs.length-1)),
+        y=pad+(max-v)/(max-min)*ph;
+    if(i===0)ctx.moveTo(x,y);
+    else ctx.lineTo(x,y);
   });
+  ctx.stroke();
 
-  const last = values.length - 1;
-
-  ctx.fillStyle = "#333";
-  ctx.font = "bold 12px sans-serif";
-  ctx.textAlign = "center";
-
-  ctx.fillText(
-    "¥" + values[last].toLocaleString(),
-    getX(last),
-    getY(values[last]) - 10
-  );
-
-  ctx.font = "11px sans-serif";
-  ctx.fillStyle = "#666";
-
-  values.forEach((value,i)=>{
-    ctx.fillText(
-      i === 0 ? "開始" : i,
-      getX(i),
-      graphHeight - 12
-    );
+  ctx.fillStyle="#333";
+  vals.forEach((v,i)=>{
+    let x=pad+(rs.length===1?pw/2:pw*i/(rs.length-1)),
+        y=pad+(max-v)/(max-min)*ph;
+    ctx.beginPath();
+    ctx.arc(x,y,3,0,Math.PI*2);
+    ctx.fill();
   });
 }
 function check(){
@@ -626,4 +672,4 @@ const treeForAch = new Proxy({}, {get(_,p){const x=JSON.parse(localStorage.getIt
 })();
 </script>
 
-</body></html
+</body></html>
