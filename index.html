@@ -212,65 +212,159 @@ function trajectory(){
   put("trTreeGrowth",(Number(td.growthCount)||0)+"回");
 }
 function draw(){
-  const c=document.getElementById("graph");
-  if(!c)return;
-  const ctx=c.getContext("2d");
-  const rs=[...records].sort((a,b)=>(a.ts||0)-(b.ts||0));
-  const dpr=window.devicePixelRatio||1;
-  const w=520,h=240,pad=35;
 
-  c.width=w*dpr;
-  c.height=h*dpr;
-  c.style.width=w+"px";
-  c.style.height=h+"px";
+  const canvas = document.getElementById("graph");
+  if(!canvas) return;
+
+  const wrap = canvas.parentElement;
+  const dpr = window.devicePixelRatio || 1;
+
+  const graphWidth =
+    Math.max(
+      wrap.clientWidth,
+      Math.max(1, records.length) * 75 + 70
+    );
+
+  const graphHeight = 240;
+
+  canvas.style.width = graphWidth + "px";
+  canvas.style.height = graphHeight + "px";
+  canvas.width = graphWidth * dpr;
+  canvas.height = graphHeight * dpr;
+
+  const ctx = canvas.getContext("2d");
   ctx.setTransform(dpr,0,0,dpr,0,0);
-  ctx.clearRect(0,0,w,h);
+  ctx.clearRect(0,0,graphWidth,graphHeight);
 
-  if(!rs.length){
-    ctx.fillStyle="#888";
-    ctx.textAlign="center";
-    ctx.font="14px sans-serif";
-    ctx.fillText("まだ記録がありません。",w/2,h/2);
+  const values = [0];
+  let current = 0;
+
+  records.forEach(record => {
+    const amount = Number(record.amount) || 0;
+    current += record.type === "income" ? amount : -amount;
+    values.push(current);
+  });
+
+  if(values.length === 1){
+    ctx.fillStyle = "#777";
+    ctx.font = "14px sans-serif";
+    ctx.textAlign = "center";
+    ctx.fillText(
+      "履歴を追加するとグラフが表示されます",
+      graphWidth / 2,
+      graphHeight / 2
+    );
     return;
   }
 
-  let vals=[],b=0;
-  for(const r of rs){
-    b += r.type==="income" ? moneyValue(r.amount) : -moneyValue(r.amount);
-    vals.push(b);
+  let max = Math.max(...values,0);
+  let min = Math.min(...values,0);
+
+  if(max === min){
+    max += 100;
+    min -= 100;
   }
 
-  let min=Math.min(0,...vals), max=Math.max(0,...vals);
-  if(min===max){min-=100;max+=100;}
+  const range = max - min;
+  const left = 55;
+  const right = 20;
+  const top = 20;
+  const bottom = 35;
+  const width = graphWidth - left - right;
+  const height = graphHeight - top - bottom;
 
-  const pw=w-pad*2, ph=h-pad*2;
+  const getX = i =>
+    left + width * i / (values.length - 1);
 
-  ctx.strokeStyle="#ddd";
-  ctx.lineWidth=1;
-  ctx.beginPath();
-  ctx.moveTo(pad,pad);
-  ctx.lineTo(pad,h-pad);
-  ctx.lineTo(w-pad,h-pad);
-  ctx.stroke();
+  const getY = value =>
+    top + height * (max - value) / range;
 
-  ctx.strokeStyle="#333";
-  ctx.lineWidth=2;
-  ctx.beginPath();
+  ctx.font = "11px sans-serif";
+  ctx.textAlign = "right";
+  ctx.lineWidth = 1;
 
-  vals.forEach((v,i)=>{
-    const x=pad+(rs.length===1?pw/2:pw*i/(rs.length-1));
-    const y=pad+(max-v)/(max-min)*ph;
-    if(i===0)ctx.moveTo(x,y); else ctx.lineTo(x,y);
-  });
-  ctx.stroke();
+  for(let i=0;i<=5;i++){
+    const value = max - range * i / 5;
+    const y = getY(value);
 
-  ctx.fillStyle="#333";
-  vals.forEach((v,i)=>{
-    const x=pad+(rs.length===1?pw/2:pw*i/(rs.length-1));
-    const y=pad+(max-v)/(max-min)*ph;
+    ctx.strokeStyle = "#ddd";
     ctx.beginPath();
-    ctx.arc(x,y,3,0,Math.PI*2);
+    ctx.moveTo(left,y);
+    ctx.lineTo(graphWidth-right,y);
+    ctx.stroke();
+
+    ctx.fillStyle = "#666";
+    ctx.fillText(
+      "¥" + Math.round(value).toLocaleString(),
+      left - 7,
+      y + 4
+    );
+  }
+
+  if(min <= 0 && max >= 0){
+    const y = getY(0);
+
+    ctx.strokeStyle = "#aaa";
+    ctx.setLineDash([5,5]);
+    ctx.beginPath();
+    ctx.moveTo(left,y);
+    ctx.lineTo(graphWidth-right,y);
+    ctx.stroke();
+    ctx.setLineDash([]);
+  }
+
+  ctx.strokeStyle = "#333";
+  ctx.lineWidth = 3;
+  ctx.beginPath();
+
+  values.forEach((value,i)=>{
+    const x = getX(i);
+    const y = getY(value);
+
+    if(i === 0) ctx.moveTo(x,y);
+    else ctx.lineTo(x,y);
+  });
+
+  ctx.stroke();
+
+  values.forEach((value,i)=>{
+    const x = getX(i);
+    const y = getY(value);
+
+    ctx.beginPath();
+    ctx.arc(x,y,5,0,Math.PI*2);
+
+    ctx.fillStyle =
+      i === 0
+      ? "#777"
+      : records[i-1].type === "income"
+        ? "#008000"
+        : "#d00000";
+
     ctx.fill();
+  });
+
+  const last = values.length - 1;
+
+  ctx.fillStyle = "#333";
+  ctx.font = "bold 12px sans-serif";
+  ctx.textAlign = "center";
+
+  ctx.fillText(
+    "¥" + values[last].toLocaleString(),
+    getX(last),
+    getY(values[last]) - 10
+  );
+
+  ctx.font = "11px sans-serif";
+  ctx.fillStyle = "#666";
+
+  values.forEach((value,i)=>{
+    ctx.fillText(
+      i === 0 ? "開始" : i,
+      getX(i),
+      graphHeight - 12
+    );
   });
 }
 function check(){
@@ -509,7 +603,7 @@ const treeForAch = new Proxy({}, {get(_,p){const x=JSON.parse(localStorage.getIt
         if(!maxDec||a>maxDec.amount)maxDec={amount:a,name:r.name,date:r.date};
         balance-=a;
       }
-      if(balance>best)best=balance;
+      best=Math.max(best,balance);
     });
 
     const byDay={};
