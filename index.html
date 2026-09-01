@@ -35,7 +35,7 @@ input,select,button{width:100%;box-sizing:border-box;padding:12px;margin-top:10p
 <section><h2>🎁 欲しいものリスト</h2><div class="summary"><div class="sr"><span>欲しいもの総額</span><b id="wt">¥0</b></div><div class="sr"><span>現在の残高</span><b id="wb">¥0</b></div><div class="sr"><span>残高との差額</span><b id="diff">¥0</b></div><div class="note">※現在の残高 − 欲しいもの総額</div></div><input id="wn" placeholder="欲しいもの"><input id="wp" type="number" min="1" placeholder="値段"><input id="wl" type="url" placeholder="商品リンク（任意）"><button onclick="addWish()">欲しいものを追加</button><div id="wishlist"></div></section>
 <section class="rank"><h2>🏆 お小遣いランク</h2><div id="rank" class="ranknum">D</div><div id="rankdetail" class="note"></div></section>
 <section><h2>🎯 目標貯金</h2><div class="summary"><div class="sr"><span>目標金額</span><b id="ga">未設定</b></div><div class="sr"><span>現在の残高</span><b id="gb">¥0</b></div><div class="sr"><span>達成率</span><b id="gp">0%</b></div><div class="progressbar"><div id="prog" class="progress"></div></div><div id="gm" class="goalmsg">目標金額を設定してください。</div></div><input id="gi" type="number" min="1" placeholder="目標金額"><button onclick="setGoal()">目標金額を設定</button></section>
-<section><h2>🏆 月間実績</h2><button onclick="toggleAch()">🏆 今月の実績を見る</button><div id="achlist" class="achlist"><div class="achhead"><span id="am"></span><span id="ac">0 / 32</span></div><div id="achs"></div><button type="button" onclick="togglePastAchievements()">📅 過去の実績を見る</button><div id="pastAchList" style="display:none;margin-top:10px;"></div><button onclick="toggleAch()">閉じる</button></div></section>
+<section><h2>🏆 月間実績</h2><button onclick="toggleAch()">🏆 今月の実績を見る</button><div id="achlist" class="achlist"><div class="achhead"><span id="am"></span><span id="ac">0 / 32</span></div><div id="achs"></div><button onclick="toggleAch()">閉じる</button></div></section>
 
 
 <section class="trajectory">
@@ -388,35 +388,6 @@ function check(){
 }
 function showAch(){am.textContent=now.getFullYear()+"年"+(now.getMonth()+1)+"月";ac.textContent=Object.keys(md.done).length+" / 32";achs.innerHTML=defs.map((a,i)=>`<div class="ach ${md.done[i]?"done":""}">${md.done[i]?"🏅":"🔒"} ${a[0]} <b>${a[1]}</b><div class="note">${a[2]}</div></div>`).join("")}
 function toggleAch(){achlist.classList.toggle("open");showAch()}
-function togglePastAchievements(){
-  const el=document.getElementById("pastAchList");
-  if(!el)return;
-  if(el.style.display==="none"||!el.style.display){
-    const keys=Object.keys(months).filter(k=>k!==mk).sort().reverse();
-    if(!keys.length){
-      el.innerHTML='<div class="note">まだ過去の実績はありません。</div>';
-    }else{
-      el.innerHTML='<div style="font-weight:bold;margin:8px 0;">📅 月を選択</div>'+keys.map(k=>{
-        const [y,m]=k.split("-");
-        return `<button type="button" onclick="showPastAchievementMonth('${k}')">${y}年${Number(m)}月</button>`;
-      }).join("");
-    }
-    el.style.display="block";
-  }else{
-    el.style.display="none";
-  }
-}
-function showPastAchievementMonth(key){
-  const el=document.getElementById("pastAchList");
-  if(!el)return;
-  const data=months[key]||{done:{}};
-  const done=data.done||{};
-  const count=Object.keys(done).length;
-  const [y,m]=key.split("-");
-  el.innerHTML=`<div class="achhead"><span>${y}年${Number(m)}月</span><span>${count} / 32</span></div>`+
-    defs.map((a,i)=>`<div class="ach ${done[i]?"done":""}">${done[i]?"🏅":"🔒"} ${a[0]} <b>${a[1]}</b><div class="note">${a[2]}</div></div>`).join("")+
-    '<button type="button" onclick="togglePastAchievements()">← 月一覧に戻る</button>';
-}
 function streak(n){let ds=[...new Set(md.opens)].sort();let best=0,cur=0,prev=null;for(let s of ds){let d=new Date(s);if(prev&&d-prev==86400000)cur++;else cur=1;best=Math.max(best,cur);prev=d}return best>=n}
 function weekOK(){let rs=mr().filter(r=>r.type=="expense");for(let i=0;i<rs.length;i++){let d=new Date(rs[i].ts),s=0;rs.forEach(q=>{if(q.type=="expense"&&q.ts>=d.getTime()&&q.ts<=d.getTime()+6*86400000)s+=+q.amount});if(s<=1000)return true}return false}
 function esc(s){return String(s).replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[m]))}function escA(s){return esc(s)}
@@ -678,6 +649,38 @@ const treeForAch = new Proxy({}, {get(_,p){const x=JSON.parse(localStorage.getIt
     renderTrajectory();
   },0);
 })();
+</script>
+
+
+<button type="button" id="pastAchievementsBtn" onclick="showPastAchievements()">📅 過去の実績を見る</button>
+<div id="pastAchievementsPanel" style="display:none;">
+  <div id="pastAchievementsMonths"></div>
+  <div id="pastAchievementsDetail"></div>
+</div>
+<script>
+function showPastAchievements(){
+  const panel=document.getElementById('pastAchievementsPanel');
+  const list=document.getElementById('pastAchievementsMonths');
+  const detail=document.getElementById('pastAchievementsDetail');
+  if(!panel||!list||!detail)return;
+  const data=JSON.parse(localStorage.getItem('okodukaiMonthlyData')||'{}');
+  const months=Object.keys(data).sort().reverse();
+  list.innerHTML=months.length?months.map(m=>`<button type="button" onclick="showPastAchievementMonth('${m}')">${m.slice(0,4)}年${Number(m.slice(5,7))}月</button>`).join(''):'過去の実績はありません。';
+  detail.innerHTML='';
+  panel.style.display='block';
+}
+function showPastAchievementMonth(month){
+  const data=JSON.parse(localStorage.getItem('okodukaiMonthlyData')||'{}');
+  const m=data[month];
+  const detail=document.getElementById('pastAchievementsDetail');
+  if(!detail||!m)return;
+  const achievements=m.achievements||m.achievement||[];
+  if(Array.isArray(achievements)){
+    detail.innerHTML=achievements.map((a,i)=>`<div>${a.completed?'✅':'⬜'} ${a.name||('実績 '+(i+1))}</div>`).join('');
+  }else{
+    detail.innerHTML='<div>この月の実績データがあります。</div>';
+  }
+}
 </script>
 
 </body></html>
