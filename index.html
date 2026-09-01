@@ -94,8 +94,8 @@ const defs=[
 ["🧘","節約モード","1週間で支出合計を1,000円以下にする",()=>weekOK()],["🔥","確認は大切","7日連続でサイトを開く",()=>streak(7)],["🔥","お金は管理しよう","14日連続でサイトを開く",()=>streak(14)],["👂","耳にタコができる","今日の一言を12種類以上見る",()=>md.seen.length>=12],["🏆","小遣いマスター","今月Sランクになる",()=>rank()=="S"],["🥇","プロ到達","今月Aランク以上になる",()=>["S","A"].includes(rank())],
 ["🎁","初めての欲しいもの","欲しいものを1個登録する",()=>wishes.length>=1],["🎁","購入計画書","欲しいものを3個登録する",()=>wishes.length>=3],["🛒","初購入","「買った！」を1回使う",()=>wishes.some(w=>w.bought)],["🛒","お買い物上手","「買った！」を3回使う",()=>wishes.filter(w=>w.bought).length>=3],["🔗","I want this","商品リンク付きの商品を登録する",()=>wishes.some(w=>w.link)],
 ["🎯","貯金開始","目標貯金を設定する",()=>goal!==null],["🎯","順調","目標貯金の達成率50%以上",()=>goal!==null&&bal()/goal>=.5],["🎉","貯金上手","目標貯金を達成する",()=>goal!==null&&bal()>=goal],
-["🌳","林業従事者","木を1段階成長させる",()=>treeForAch.spent>=500||treeForAch.growthCount>0],
-["🪙","こんなに!?","月初めからコインが1,500枚増える",()=>coinForAch.totalEarned-(coinForAch.monthStartTotalEarned||0)>=1500],
+["🌳","林業従事者","木を1段階成長させる",()=>typeof treeForAch!=="undefined"&&(Number(treeForAch.spent)>=500||Number(treeForAch.growthCount)>0)],
+["🪙","こんなに!?","月初めからコインが1,500枚増える",()=>typeof coinForAch!=="undefined"&&Number(coinForAch.totalEarned)-Number(coinForAch.monthStartTotalEarned||0)>=1500],
 ["👑","今月の達人","今月の実績を20個以上達成する",()=>Object.keys(md.done).filter(i=>Number(i)<31).length>=20]
 ];
 function save(){localStorage.setItem(K,JSON.stringify(records));localStorage.setItem(W,JSON.stringify(wishes));localStorage.setItem(M,JSON.stringify(months))}
