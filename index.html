@@ -299,19 +299,20 @@ function actualBalanceHistory(){
 }
 
 function draw(){
-  let c=document.getElementById("graph"),
-      ctx=c.getContext("2d"),
-      rs=[...records].sort((a,b)=>(a.ts||0)-(b.ts||0));
-
-  let dpr=window.devicePixelRatio||1,
-      w=520,
-      h=240;
+  const c=document.getElementById("graph");
+  if(!c)return;
+  const ctx=c.getContext("2d");
+  const rs=[...records].sort((a,b)=>(Number(a.ts)||0)-(Number(b.ts)||0));
+  const dpr=window.devicePixelRatio||1;
+  const pointGap=82;
+  const w=Math.max(520,Math.max(1,rs.length)*pointGap+90);
+  const h=300;
 
   c.width=w*dpr;
   c.height=h*dpr;
   c.style.width=w+"px";
   c.style.height=h+"px";
-  ctx.scale(dpr,dpr);
+  ctx.setTransform(dpr,0,0,dpr,0,0);
   ctx.clearRect(0,0,w,h);
 
   if(!rs.length){
@@ -322,47 +323,93 @@ function draw(){
     return;
   }
 
-  let vals=[], b=0;
+  const points=[];
+  let b=0;
   rs.forEach(r=>{
-    b+=r.type=="income"?moneyValue(r.amount):-moneyValue(r.amount);
-    vals.push(b);
+    const a=moneyValue(r.amount);
+    b+=r.type==="income"?a:-a;
+    points.push({record:r,balance:b});
   });
 
-  let min=Math.min(0,...vals), max=Math.max(0,...vals);
+  let min=Math.min(0,...points.map(p=>p.balance));
+  let max=Math.max(0,...points.map(p=>p.balance));
   if(min===max){min-=100;max+=100;}
+  const left=72,right=25,top=25,bottom=62;
+  const pw=w-left-right,ph=h-top-bottom;
+  const xFor=i=>left+(points.length===1?pw/2:pw*i/(points.length-1));
+  const yFor=v=>top+(max-v)/(max-min)*ph;
 
-  let pad=35,pw=w-pad*2,ph=h-pad*2;
-
-  ctx.strokeStyle="#ddd";
+  /* 軸 */
+  ctx.strokeStyle="#ccc";
   ctx.lineWidth=1;
   ctx.beginPath();
-  ctx.moveTo(pad,pad);
-  ctx.lineTo(pad,h-pad);
-  ctx.lineTo(w-pad,h-pad);
+  ctx.moveTo(left,top);
+  ctx.lineTo(left,h-bottom);
+  ctx.lineTo(w-right,h-bottom);
   ctx.stroke();
 
-  /* グラフは従来どおり全履歴を対象にする */
-  ctx.strokeStyle="#333";
-  ctx.lineWidth=2;
-  ctx.beginPath();
-
-  vals.forEach((v,i)=>{
-    let x=pad+(rs.length===1?pw/2:pw*i/(rs.length-1)),
-        y=pad+(max-v)/(max-min)*ph;
-    if(i===0)ctx.moveTo(x,y);
-    else ctx.lineTo(x,y);
-  });
-  ctx.stroke();
-
-  ctx.fillStyle="#333";
-  vals.forEach((v,i)=>{
-    let x=pad+(rs.length===1?pw/2:pw*i/(rs.length-1)),
-        y=pad+(max-v)/(max-min)*ph;
+  /* 金額目盛り */
+  ctx.fillStyle="#555";
+  ctx.font="11px sans-serif";
+  ctx.textAlign="right";
+  const ticks=5;
+  for(let i=0;i<=ticks;i++){
+    const v=max-(max-min)*i/ticks;
+    const y=yFor(v);
+    ctx.strokeStyle="#eee";
     ctx.beginPath();
-    ctx.arc(x,y,3,0,Math.PI*2);
+    ctx.moveTo(left,y);
+    ctx.lineTo(w-right,y);
+    ctx.stroke();
+    ctx.fillStyle="#555";
+    ctx.fillText("¥"+Math.round(v).toLocaleString(),left-7,y+4);
+  }
+
+  /* 軸ラベル */
+  ctx.save();
+  ctx.translate(14,top+ph/2);
+  ctx.rotate(-Math.PI/2);
+  ctx.fillStyle="#555";
+  ctx.font="12px sans-serif";
+  ctx.textAlign="center";
+  ctx.fillText("金額",0,0);
+  ctx.restore();
+
+  ctx.fillStyle="#555";
+  ctx.font="12px sans-serif";
+  ctx.textAlign="center";
+  ctx.fillText("日にち",left+pw/2,h-8);
+
+  /* 上昇=青、下降=赤、変化なし=灰色 */
+  for(let i=1;i<points.length;i++){
+    const x1=xFor(i-1),y1=yFor(points[i-1].balance);
+    const x2=xFor(i),y2=yFor(points[i].balance);
+    const diff=points[i].balance-points[i-1].balance;
+    ctx.strokeStyle=diff>0?"#1976d2":diff<0?"#d32f2f":"#777";
+    ctx.lineWidth=3;
+    ctx.beginPath();
+    ctx.moveTo(x1,y1);
+    ctx.lineTo(x2,y2);
+    ctx.stroke();
+  }
+
+  /* 点と日付 */
+  points.forEach((p,i)=>{
+    const x=xFor(i),y=yFor(p.balance);
+    const prev=i>0?points[i-1].balance:p.balance;
+    const diff=p.balance-prev;
+    ctx.fillStyle=i===0?"#777":diff>0?"#1976d2":diff<0?"#d32f2f":"#777";
+    ctx.beginPath();
+    ctx.arc(x,y,5,0,Math.PI*2);
     ctx.fill();
+
+    ctx.fillStyle="#333";
+    ctx.font="10px sans-serif";
+    ctx.textAlign="center";
+    ctx.fillText(String(p.record.date||""),x,h-bottom+18);
   });
 }
+
 function check(){
   let before=md.max;
   md.max=Math.max(md.max,bal());
@@ -392,7 +439,7 @@ function streak(n){let ds=[...new Set(md.opens)].sort();let best=0,cur=0,prev=nu
 function weekOK(){let rs=mr().filter(r=>r.type=="expense");for(let i=0;i<rs.length;i++){let d=new Date(rs[i].ts),s=0;rs.forEach(q=>{if(q.type=="expense"&&q.ts>=d.getTime()&&q.ts<=d.getTime()+6*86400000)s+=+q.amount});if(s<=1000)return true}return false}
 function esc(s){return String(s).replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[m]))}function escA(s){return esc(s)}
 function clearFields(){nameEl().value=amountEl().value=""}
-function render(){balance.textContent="¥"+bal().toLocaleString();showHistory();showWishes();showGoal();showRank();draw();trajectory();showAch()}
+function render(){const balanceEl=document.getElementById("balance");if(balanceEl)balanceEl.textContent="¥"+bal().toLocaleString();showHistory();showWishes();showGoal();showRank();draw();trajectory();showAch()}
 let day=Math.floor(new Date(now.getFullYear(),now.getMonth(),now.getDate()).getTime()/86400000),qi=day%quotes.length;quote.textContent="💬 "+quotes[qi];if(!md.seen.includes(qi))md.seen.push(qi);let od=now.getFullYear()+"/"+(now.getMonth()+1)+"/"+now.getDate();if(!md.opens.includes(od))md.opens.push(od);save();check();render();window.onresize=draw;
 </script>
 
