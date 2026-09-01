@@ -727,4 +727,30 @@ const treeForAch = new Proxy({}, {get(_,p){const x=JSON.parse(localStorage.getIt
 })();
 </script>
 
+
+<script>
+/* ===== 更新時の残高表示を確実に復元 ===== */
+(function(){
+  function restoreBalance(){
+    try{
+      const rs=JSON.parse(localStorage.getItem("okodukaiRecords")||"[]");
+      let b=0;
+      rs.forEach(r=>{
+        const a=Number(String(r.amount??0).replace(/,/g,""))||0;
+        b += r.type==="income" ? a : -a;
+      });
+      const text="¥"+b.toLocaleString();
+      const main=document.getElementById("balance");
+      if(main) main.textContent=text;
+      const wb=document.getElementById("wb");
+      if(wb) wb.textContent=text;
+      const gb=document.getElementById("gb");
+      if(gb) gb.textContent=text;
+    }catch(e){}
+  }
+  if(document.readyState==="loading") document.addEventListener("DOMContentLoaded",restoreBalance);
+  else restoreBalance();
+  window.addEventListener("pageshow",restoreBalance);
+})();
+</script>
 </body></html>
