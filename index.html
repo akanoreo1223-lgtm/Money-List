@@ -35,7 +35,7 @@ input,select,button{width:100%;box-sizing:border-box;padding:12px;margin-top:10p
 <section><h2>🎁 欲しいものリスト</h2><div class="summary"><div class="sr"><span>欲しいもの総額</span><b id="wt">¥0</b></div><div class="sr"><span>現在の残高</span><b id="wb">¥0</b></div><div class="sr"><span>残高との差額</span><b id="diff">¥0</b></div><div class="note">※現在の残高 − 欲しいもの総額</div></div><input id="wn" placeholder="欲しいもの"><input id="wp" type="number" min="1" placeholder="値段"><input id="wl" type="url" placeholder="商品リンク（任意）"><button onclick="addWish()">欲しいものを追加</button><div id="wishlist"></div></section>
 <section class="rank"><h2>🏆 お小遣いランク</h2><div id="rank" class="ranknum">D</div><div id="rankdetail" class="note"></div></section>
 <section><h2>🎯 目標貯金</h2><div class="summary"><div class="sr"><span>目標金額</span><b id="ga">未設定</b></div><div class="sr"><span>現在の残高</span><b id="gb">¥0</b></div><div class="sr"><span>達成率</span><b id="gp">0%</b></div><div class="progressbar"><div id="prog" class="progress"></div></div><div id="gm" class="goalmsg">目標金額を設定してください。</div></div><input id="gi" type="number" min="1" placeholder="目標金額"><button onclick="setGoal()">目標金額を設定</button></section>
-<section><h2>🏆 月間実績</h2><button onclick="toggleAch()">🏆 今月の実績を見る</button><div id="achlist" class="achlist"><div class="achhead"><span id="am"></span><span id="ac">0 / 32</span></div><div id="achs"></div><button onclick="toggleAch()">閉じる</button></div></section>
+<section><h2>🏆 月間実績</h2><button onclick="toggleAch()">🏆 今月の実績を見る</button><div id="achlist" class="achlist"><div class="achhead"><span id="am"></span><span id="ac">0 / 32</span></div><div id="achs"></div><button type="button" onclick="togglePastAchievements()">📅 過去の実績を見る</button><div id="pastAchList" style="display:none;margin-top:10px;"></div><button onclick="toggleAch()">閉じる</button></div></section>
 
 
 <section class="trajectory">
@@ -94,8 +94,8 @@ const defs=[
 ["🧘","節約モード","1週間で支出合計を1,000円以下にする",()=>weekOK()],["🔥","確認は大切","7日連続でサイトを開く",()=>streak(7)],["🔥","お金は管理しよう","14日連続でサイトを開く",()=>streak(14)],["👂","耳にタコができる","今日の一言を12種類以上見る",()=>md.seen.length>=12],["🏆","小遣いマスター","今月Sランクになる",()=>rank()=="S"],["🥇","プロ到達","今月Aランク以上になる",()=>["S","A"].includes(rank())],
 ["🎁","初めての欲しいもの","欲しいものを1個登録する",()=>wishes.length>=1],["🎁","購入計画書","欲しいものを3個登録する",()=>wishes.length>=3],["🛒","初購入","「買った！」を1回使う",()=>wishes.some(w=>w.bought)],["🛒","お買い物上手","「買った！」を3回使う",()=>wishes.filter(w=>w.bought).length>=3],["🔗","I want this","商品リンク付きの商品を登録する",()=>wishes.some(w=>w.link)],
 ["🎯","貯金開始","目標貯金を設定する",()=>goal!==null],["🎯","順調","目標貯金の達成率50%以上",()=>goal!==null&&bal()/goal>=.5],["🎉","貯金上手","目標貯金を達成する",()=>goal!==null&&bal()>=goal],
-["🌳","林業従事者","木を1段階成長させる",()=>typeof treeForAch!=="undefined"&&(Number(treeForAch.spent)>=500||Number(treeForAch.growthCount)>0)],
-["🪙","こんなに!?","月初めからコインが1,500枚増える",()=>typeof coinForAch!=="undefined"&&Number(coinForAch.totalEarned)-Number(coinForAch.monthStartTotalEarned||0)>=1500],
+["🌳","林業従事者","木を1段階成長させる",()=>treeForAch.spent>=500||treeForAch.growthCount>0],
+["🪙","こんなに!?","月初めからコインが1,500枚増える",()=>coinForAch.totalEarned-(coinForAch.monthStartTotalEarned||0)>=1500],
 ["👑","今月の達人","今月の実績を20個以上達成する",()=>Object.keys(md.done).filter(i=>Number(i)<31).length>=20]
 ];
 function save(){localStorage.setItem(K,JSON.stringify(records));localStorage.setItem(W,JSON.stringify(wishes));localStorage.setItem(M,JSON.stringify(months))}
@@ -435,6 +435,35 @@ function check(){
 }
 function showAch(){am.textContent=now.getFullYear()+"年"+(now.getMonth()+1)+"月";ac.textContent=Object.keys(md.done).length+" / 32";achs.innerHTML=defs.map((a,i)=>`<div class="ach ${md.done[i]?"done":""}">${md.done[i]?"🏅":"🔒"} ${a[0]} <b>${a[1]}</b><div class="note">${a[2]}</div></div>`).join("")}
 function toggleAch(){achlist.classList.toggle("open");showAch()}
+function togglePastAchievements(){
+  const el=document.getElementById("pastAchList");
+  if(!el)return;
+  if(el.style.display==="none"||!el.style.display){
+    const keys=Object.keys(months).filter(k=>k!==mk).sort().reverse();
+    if(!keys.length){
+      el.innerHTML='<div class="note">まだ過去の実績はありません。</div>';
+    }else{
+      el.innerHTML='<div style="font-weight:bold;margin:8px 0;">📅 月を選択</div>'+keys.map(k=>{
+        const [y,m]=k.split("-");
+        return `<button type="button" onclick="showPastAchievementMonth('${k}')">${y}年${Number(m)}月</button>`;
+      }).join("");
+    }
+    el.style.display="block";
+  }else{
+    el.style.display="none";
+  }
+}
+function showPastAchievementMonth(key){
+  const el=document.getElementById("pastAchList");
+  if(!el)return;
+  const data=months[key]||{done:{}};
+  const done=data.done||{};
+  const count=Object.keys(done).length;
+  const [y,m]=key.split("-");
+  el.innerHTML=`<div class="achhead"><span>${y}年${Number(m)}月</span><span>${count} / 32</span></div>`+
+    defs.map((a,i)=>`<div class="ach ${done[i]?"done":""}">${done[i]?"🏅":"🔒"} ${a[0]} <b>${a[1]}</b><div class="note">${a[2]}</div></div>`).join("")+
+    '<button type="button" onclick="togglePastAchievements()">← 月一覧に戻る</button>';
+}
 function streak(n){let ds=[...new Set(md.opens)].sort();let best=0,cur=0,prev=null;for(let s of ds){let d=new Date(s);if(prev&&d-prev==86400000)cur++;else cur=1;best=Math.max(best,cur);prev=d}return best>=n}
 function weekOK(){let rs=mr().filter(r=>r.type=="expense");for(let i=0;i<rs.length;i++){let d=new Date(rs[i].ts),s=0;rs.forEach(q=>{if(q.type=="expense"&&q.ts>=d.getTime()&&q.ts<=d.getTime()+6*86400000)s+=+q.amount});if(s<=1000)return true}return false}
 function esc(s){return String(s).replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[m]))}function escA(s){return esc(s)}
