@@ -85,22 +85,78 @@ input,select,button{width:100%;box-sizing:border-box;padding:12px;margin-top:10p
 <script>
 const K="okodukaiRecords",W="okodukaiWishes",G="okodukaiGoal",M="okodukaiMonthlyData",now=new Date(),mk=now.getFullYear()+"-"+String(now.getMonth()+1).padStart(2,"0");
 let records=JSON.parse(localStorage.getItem(K)||"[]"),wishes=JSON.parse(localStorage.getItem(W)||"[]"),goal=localStorage.getItem(G);goal=goal===null?null:Number(goal);
-let months=JSON.parse(localStorage.getItem(M)||"{}");months[mk] ||= {done:{},seen:[],opens:[],max:0,newHigh:false};let md=months[mk];
+let months=JSON.parse(localStorage.getItem(M)||"{}");months[mk] ||= {
+  done:{},seen:[],opens:[],max:0,newHigh:false,
+  baselineInitialized:false,
+  startRecordCount:0,startIncomeCount:0,startIncomeTotal:0,
+  startExpenseCount:0,startWishCount:0,startBoughtCount:0,
+  startLinkWishCount:0,startGoalSet:false,startHighestBalance:0
+};
+let md=months[mk];
 const quotes=["小さな貯金が大きな目標につながる！","本当に欲しいものか、一度考えてみよう。","計画的に使えば、お金はもっと強い味方になる！","今日も無理なく貯金を続けよう！","欲しいものと必要なものを見分けよう。","1円の積み重ねも立派な貯金！","貯めることも、使うことも計画的に。","目標まであと少し！頑張ろう！","お金を記録するだけでも立派なお金管理！","未来の自分のために、今日のお金を大切に。","無駄遣いを減らして、欲しいものを手に入れよう！","今日の選択が未来の残高を作る！","欲しいものを買うために、今日も一歩前進！","使ったお金も、貯めたお金も大切な記録！","少しずつでも続けることが大切！","迷ったら、本当に必要か考えてみよう。","貯金は未来の自分へのプレゼント！","目標を忘れず、コツコツ貯めよう！","お金の管理ができる人はかっこいい！✨","今日もお小遣いを上手に使おう！💰"];
 const defs=[
-["🌱","はじめの一歩","今月初めて記録する",()=>mr().length>=1],["📝","記録ビギナー","今月3件記録する",()=>mr().length>=3],["📚","中級記録マン","今月10件記録する",()=>mr().length>=10],["📖","上級記録マン","今月20件記録する",()=>mr().length>=20],["👑","記録マスター","今月30件記録する",()=>mr().length>=30],
-["💰","貯金のススメ","残高が1,000円以上になる",()=>md.max>=1000],["💰","貯金ビギナー","残高が3,000円以上になる",()=>md.max>=3000],["💎","節約上手","残高が5,000円以上になる",()=>md.max>=5000],["💎","お金持ち","残高が10,000円以上になる",()=>md.max>=10000],["🤑","億万長者","残高が20,000円以上になる",()=>md.max>=20000],
-["📈","これからも","過去最高残高を更新する",()=>md.newHigh],["🏦","親戚からのお年玉","今月3回収入を記録する",()=>mr().filter(r=>r.type=="income").length>=3],["💵","ボーナスGET","今月の収入合計が5,000円以上",()=>sum(mr().filter(r=>r.type=="income"))>=5000],["🛍️","お小遣いの使い道","今月初めて支出を記録する",()=>mr().some(r=>r.type=="expense")],["🧮","自分に正直に","今月5回支出を記録する",()=>mr().filter(r=>r.type=="expense").length>=5],
-["🧘","節約モード","1週間で支出合計を1,000円以下にする",()=>weekOK()],["🔥","確認は大切","7日連続でサイトを開く",()=>streak(7)],["🔥","お金は管理しよう","14日連続でサイトを開く",()=>streak(14)],["👂","耳にタコができる","今日の一言を12種類以上見る",()=>md.seen.length>=12],["🏆","小遣いマスター","今月Sランクになる",()=>rank()=="S"],["🥇","プロ到達","今月Aランク以上になる",()=>["S","A"].includes(rank())],
-["🎁","初めての欲しいもの","欲しいものを1個登録する",()=>wishes.length>=1],["🎁","購入計画書","欲しいものを3個登録する",()=>wishes.length>=3],["🛒","初購入","「買った！」を1回使う",()=>wishes.some(w=>w.bought)],["🛒","お買い物上手","「買った！」を3回使う",()=>wishes.filter(w=>w.bought).length>=3],["🔗","I want this","商品リンク付きの商品を登録する",()=>wishes.some(w=>w.link)],
-["🎯","貯金開始","目標貯金を設定する",()=>goal!==null],["🎯","順調","目標貯金の達成率50%以上",()=>goal!==null&&bal()/goal>=.5],["🎉","貯金上手","目標貯金を達成する",()=>goal!==null&&bal()>=goal],
+["🌱","はじめの一歩","今月初めて記録する",()=>mr().length-md.startRecordCount>=1],
+["📝","記録ビギナー","今月3件記録する",()=>mr().length-md.startRecordCount>=3],
+["📚","中級記録マン","今月10件記録する",()=>mr().length-md.startRecordCount>=10],
+["📖","上級記録マン","今月20件記録する",()=>mr().length-md.startRecordCount>=20],
+["👑","記録マスター","今月30件記録する",()=>mr().length-md.startRecordCount>=30],
+
+["💰","貯金のススメ","残高が1,000円以上になる",()=>bal()>=1000],
+["💰","貯金ビギナー","残高が3,000円以上になる",()=>bal()>=3000],
+["💎","節約上手","残高が5,000円以上になる",()=>bal()>=5000],
+["💎","お金持ち","残高が10,000円以上になる",()=>bal()>=10000],
+["🤑","億万長者","残高が20,000円以上になる",()=>bal()>=20000],
+
+["📈","これからも","過去最高残高を更新する",()=>bal()>md.startHighestBalance],
+
+["🏦","親戚からのお年玉","今月3回収入を記録する",()=>mr().filter(r=>r.type=="income").length-md.startIncomeCount>=3],
+["💵","ボーナスGET","今月の収入合計が5,000円以上",()=>sum(mr().filter(r=>r.type=="income"))-md.startIncomeTotal>=5000],
+["🛍️","お小遣いの使い道","今月初めて支出を記録する",()=>mr().filter(r=>r.type=="expense").length-md.startExpenseCount>=1],
+["🧮","自分に正直に","今月5回支出を記録する",()=>mr().filter(r=>r.type=="expense").length-md.startExpenseCount>=5],
+
+["🧘","節約モード","1週間で支出合計を1,000円以下にする",()=>weekOK()],
+["🔥","確認は大切","7日連続でサイトを開く",()=>streak(7)],
+["🔥","お金は管理しよう","14日連続でサイトを開く",()=>streak(14)],
+["👂","耳にタコができる","今日の一言を12種類以上見る",()=>md.seen.length>=12],
+
+["🏆","小遣いマスター","今月Sランクになる",()=>rank()=="S"],
+["🥇","プロ到達","今月Aランク以上になる",()=>["S","A"].includes(rank())],
+
+["🎁","初めての欲しいもの","欲しいものを1個登録する",()=>wishes.length-md.startWishCount>=1],
+["🎁","購入計画書","欲しいものを3個登録する",()=>wishes.length-md.startWishCount>=3],
+["🛒","初購入","「買った！」を1回使う",()=>wishes.filter(w=>w.bought).length-md.startBoughtCount>=1],
+["🛒","お買い物上手","「買った！」を3回使う",()=>wishes.filter(w=>w.bought).length-md.startBoughtCount>=3],
+["🔗","I want this","商品リンク付きの商品を登録する",()=>wishes.filter(w=>w.link).length-md.startLinkWishCount>=1],
+
+["🎯","貯金開始","目標貯金を設定する",()=>goal!==null&&!md.startGoalSet],
+["🎯","順調","目標貯金の達成率50%以上",()=>goal!==null&&bal()/goal>=.5],
+["🎉","貯金上手","目標貯金を達成する",()=>goal!==null&&bal()>=goal],
+
 ["🌳","林業従事者","木を1段階成長させる",()=>typeof treeForAch!=="undefined"&&(Number(treeForAch.spent)>=500||Number(treeForAch.growthCount)>0)],
 ["🪙","こんなに!?","月初めからコインが1,500枚増える",()=>typeof coinForAch!=="undefined"&&Number(coinForAch.totalEarned)-Number(coinForAch.monthStartTotalEarned||0)>=1500],
+
 ["👑","今月の達人","今月の実績を20個以上達成する",()=>Object.keys(md.done).filter(i=>Number(i)<31).length>=20]
 ];
 function save(){localStorage.setItem(K,JSON.stringify(records));localStorage.setItem(W,JSON.stringify(wishes));localStorage.setItem(M,JSON.stringify(months))}
 function moneyValue(v){if(typeof v==="number"&&Number.isFinite(v))return v;const n=Number(String(v??"").replace(/,/g,"").trim());return Number.isFinite(n)?n:0}function bal(){return records.reduce((x,r)=>x+(r.type=="income"?moneyValue(r.amount):-moneyValue(r.amount)),0)}function sum(a){return a.reduce((x,r)=>x+moneyValue(r.amount),0)}
 function mr(){return records.filter(r=>{let d=new Date(r.ts||0);return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")==mk})}
+function initMonthBaseline(){
+  if(md.baselineInitialized)return;
+  const m=mr();
+  md.startRecordCount=0;
+  md.startIncomeCount=0;
+  md.startIncomeTotal=0;
+  md.startExpenseCount=0;
+  md.startWishCount=0;
+  md.startBoughtCount=0;
+  md.startLinkWishCount=0;
+  md.startGoalSet=false;
+  md.startHighestBalance=bal();
+  md.baselineInitialized=true;
+  md.max=bal();
+  md.newHigh=false;
+  save();
+}
 function addMoney(){let type=typeEl().value,n=nameEl().value.trim(),a=+amountEl().value;if(!n||a<=0)return alert("内容と金額を入力してください。");records.push({type,name:n,amount:a,date:new Date().toLocaleDateString("ja-JP"),ts:Date.now()});save();clearFields();render();check()}
 function typeEl(){return document.getElementById("type")}function nameEl(){return document.getElementById("name")}function amountEl(){return document.getElementById("amount")}
 function showHistory(){let c=document.getElementById("cond").value,a=document.getElementById("qa").value,b=document.getElementById("qb").value,q=document.getElementById("q").value.toLowerCase();document.getElementById("qb").style.display=c=="range"?"block":"none";let rs=records.map((r,i)=>({...r,i})).filter(r=>{let n=+r.amount;if(q&&!r.name.toLowerCase().includes(q))return false;if(c=="eq"&&(a==""||n!=+a))return false;if(c=="gte"&&(a==""||n<+a))return false;if(c=="lte"&&(a==""||n>+a))return false;if(c=="range"&&(a==""||b==""||n<+a||n>+b))return false;return true}).reverse(),h=document.getElementById("history");h.innerHTML=rs.length?rs.map(r=>`<div class="item"><div><small>${esc(r.date)}</small><br>${esc(r.name)}${r.trajectoryExcluded?'<br><span class="note">📜 軌跡から除外中</span>':""}</div><div><span class="${r.type=="income"?"income":"expense"}">${r.type=="income"?"+":"-"}¥${(+r.amount).toLocaleString()}</span><label class="note" style="display:block;margin-top:5px;cursor:pointer;"><input type="checkbox" style="width:auto;margin:0 4px 0 0;padding:0;" ${r.trajectoryExcluded?"checked":""} onchange="toggleTrajectory(${r.i},Boolean(this.checked))">軌跡から除外</label><button class="delete" onclick="delRecord(${r.i})">削除</button></div></div>`).join(""):'<p class="empty">該当する履歴がありません。</p>'}
@@ -411,9 +467,10 @@ function draw(){
 }
 
 function check(){
+  initMonthBaseline();
   let before=md.max;
   md.max=Math.max(md.max,bal());
-  if(bal()>before)md.newHigh=true;
+  if(bal()>md.startHighestBalance)md.newHigh=true;
 
   /* 一度解除した実績は、その月の間は解除済みのまま */
   defs.forEach((a,i)=>{
